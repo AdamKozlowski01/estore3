@@ -1,56 +1,5 @@
 NE = IS_NOT_EMPTY()
 db.define_table(
-    'customer',
-    Field('user_ID',unique = True),
-    Field('firstName'),
-    Field('lastName'),
-    Field('middleName',required = False),
-    Field('billingAddressID'),
-    Field('shippingAddressID'),
-    Field('email'),
-    Field('is_Authorized',boolean),
-    Field('password'),
-    Field('group_ID'),
-    Field('organization_ID'),
-    Field('is_Hospital',boolean),
-    auth.signatire)
-db.define_table(
-    'address',
-    Field('user_ID'),
-    Field('typeOfAddress'),
-    Field('streetAddress'),
-    Field('city'),
-    Field('state'),
-    Field('zip',integer),
-    auth.signature)
-db.define_table(
-    'wishList',
-    Field('user_ID'),
-    Field('product_ID'),
-    auth.signature)
-db.define_table(
-    'hospital',
-    Field('h_ID',unique = True),
-    Field('hName'),
-    Field('emailFormat'),
-    Field('size'),
-    Field('esn_ID'),
-    Field('for_Profit',boolean),
-    Field('contact_Email'),
-    auth.signature)
-db.define_table(
-    'vendors',
-    Field('v_ID'),
-    Field('v_Name'),
-    Field('p_Type'),
-    auth.signature)
-db.define_table(
-    'pdoructType',
-    Field('pType_ID'),
-    Field('v_ID'),
-    Field('pType_Description'),
-    auth.signature)
-db.define_table(
     'product',
     Field('code',requires=NE),
     Field('name',requires=NE),
