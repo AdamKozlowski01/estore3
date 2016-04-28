@@ -1,5 +1,57 @@
 NE = IS_NOT_EMPTY()
 db.define_table(
+    'customer',
+    Field('user_ID',unique = True),
+    Field('firstName'),
+    Field('middleName',required = False),
+    Field('lastName'),
+    Field('profession'),
+    Field('billingAdd_ID'),
+    Field('shippingAdd_ID'),
+    Field('email'),
+    Field('is_Authorized',boolean),
+    Field('password'),
+    Field('group_ID'),
+    Field('organization_ID'),
+    Field('is_Hospital',boolean)
+    )
+db.define_table(
+    'address',
+    Field('user_ID'),
+    Field('typeofAddress'),
+    Field('streetAddress'),
+    Field('city'),
+    Field('state'),
+    Field('zip')
+    )
+db.define_table(
+    'wishList',
+    Field('user_ID'),
+    Field('product_ID')
+    )
+db.define_table(
+    'hospitals',
+    Field('h_ID',unique = True),
+    Field('h_Name',required = True),
+    Field('email_Format'),
+    Field('size'),
+    Field('esn_ID',unique = True),
+    Field('for_Profit',boolean),
+    Field('contact_Email')
+    )
+db.define_table(
+    'vendors',
+    Field('v_ID',unique = True,required = True),
+    Field('v_Name'),
+    Field('p_Type')
+    )
+db.define_Table(
+    'product_Type',
+    Field('pType_ID'),
+    Field('v_ID'),
+    Field('category')
+    )
+db.define_table(
     'product',
     Field('code',requires=NE),
     Field('name',requires=NE),
@@ -8,6 +60,7 @@ db.define_table(
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
     Field('tags'),
+    Field('p_Type'),
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
