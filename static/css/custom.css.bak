@@ -19,7 +19,7 @@
    color: white;
 }
 .navbar-inverse .navbar-brand:hover {
-   color: #FF9506;
+   color: red;
 }
 .shopping-cart table {
    max-width: 400px;
@@ -37,5 +37,5 @@
   border: 0;
 }
 .btn-primary:hover {
-  background: #FF9506;
+  background: red;
 }

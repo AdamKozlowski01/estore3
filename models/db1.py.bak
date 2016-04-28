@@ -66,7 +66,7 @@ db.define_table(
     Field('on_sale','boolean',default=False),
     Field('tax','decimal(10,2)'),
     Field('keywords',required=True,
-          compute=lambda r: "%(code)s %(name)s %(tags)s %(p_Type)s" % r),
+          compute=lambda r: "%(code)s %(name)s %(tags)s %(p_type)s" % r),
     auth.signature)
 
 db.define_table(

@@ -13,6 +13,8 @@ def index():
     return dict()
 
 def search():
+    from gluon.debug import dbg
+    dbg.set_trace() # stop here!
     keywords = request.vars.keywords.split() if request.vars.keywords else []
     price = request.vars.price
     page = int(request.vars.page or 0)
