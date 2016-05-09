@@ -1,33 +1,34 @@
 NE = IS_NOT_EMPTY()
 db.define_table(
     'customer',
-    Field('user_ID',unique = True),
+    Field('user_ID',unique = True, NE),
     Field('firstName'),
     Field('middleName',required = False),
     Field('lastName'),
     Field('profession'),
-    Field('billingAdd_ID'),
-    Field('shippingAdd_ID'),
     Field('email'),
     Field('is_Authorized',boolean),
     Field('password'),
     Field('group_ID'),
     Field('organization_ID'),
-    Field('is_Hospital',boolean)
+    Field('is_Hospital',boolean),
+    auth.signature
     )
 db.define_table(
     'address',
-    Field('user_ID'),
+    Field('organization_ID'),
     Field('typeofAddress'),
     Field('streetAddress'),
     Field('city'),
     Field('state'),
-    Field('zip')
+    Field('zip'),
+    auth.signature
     )
 db.define_table(
     'wishList',
     Field('user_ID'),
-    Field('product_ID')
+    Field('product_ID'),
+    auth.signature
     )
 db.define_table(
     'hospitals',
@@ -37,19 +38,25 @@ db.define_table(
     Field('size'),
     Field('esn_ID',unique = True),
     Field('for_Profit',boolean),
-    Field('contact_Email')
+    Field('contact_Email'),
+    Field('billingAdd_ID'),
+    Field('shippingAdd_ID'),
+    auth.signature
     )
 db.define_table(
     'vendors',
     Field('v_ID',unique = True,required = True),
     Field('v_Name'),
-    Field('p_Type')
-    )
+    Field('contant_Email'),
+
+    auth.signature)
 db.define_Table(
     'product_Type',
     Field('pType_ID'),
     Field('v_ID'),
-    Field('category')
+    Field('category'),
+    Field('vendorID')
+    auth.signature
     )
 db.define_table(
     'product',
