@@ -1,4 +1,5 @@
 NE = IS_NOT_EMPTY()
+
 db.define_table(
     'customer',
     Field('user_ID',unique = True, NE),
@@ -40,6 +41,7 @@ db.define_table(
     auth.signature
     )
 db.define_table(
+<<<<<<< HEAD
     'hospitals',
     Field('h_ID',unique = True),
     Field('h_Name',required = True),
@@ -58,6 +60,8 @@ db.define_table(
 >>>>>>> Adam
     )
 db.define_table(
+=======
+>>>>>>> master
     'vendors',
     Field('v_ID',unique = True,required = True),
     Field('v_Name'),

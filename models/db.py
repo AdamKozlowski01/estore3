@@ -54,6 +54,49 @@ response.form_label_separator = myconf.take('forms.separator')
 from gluon.tools import Auth, Service, PluginManager
 
 auth = Auth(db)
+db.define_table(
+                'hospitals',
+                Field('h_ID',unique = True),
+                Field('h_Name',required = True),
+                Field('email_Format'),
+                Field('h_size'),
+                Field('esn_ID',unique = True),
+                Field('for_Profit','boolean'),
+                Field('contact_Email')
+                )
+db.define_table(
+                auth.settings.table_user_name,
+                Field('first_name', length=128, default=''),
+                Field('last_name', length=128, default=''),
+                Field('email', length=128, default='', unique=True), # required
+                Field('password', 'password', length=512,            # required
+                      readable=False, label='Password'),
+                ##Field('address'),
+                ##Field('city'),
+                ##Field('zip'),
+                ##Field('phone'),
+                Field('Organization_name', 'reference hospitals'),
+                Field('registration_key', length=512,                # required
+                      writable=False, readable=False, default=''),
+                Field('reset_password_key', length=512,              # required
+                      writable=False, readable=False, default=''),
+                Field('registration_id', length=512,                 # required
+                      writable=False, readable=False, default=''))
+
+## do not forget validators
+custom_auth_table = db[auth.settings.table_user_name] # get the custom_auth_table
+custom_auth_table.first_name.requires =   IS_NOT_EMPTY(error_message=auth.messages.is_empty)
+custom_auth_table.last_name.requires =   IS_NOT_EMPTY(error_message=auth.messages.is_empty)
+custom_auth_table.password.requires = [IS_STRONG(), CRYPT()]
+custom_auth_table.email.requires = [
+                                    IS_EMAIL(error_message=auth.messages.invalid_email),
+                                    IS_NOT_IN_DB(db, custom_auth_table.email)]
+custom_auth_table.Organization_name.requires = IS_IN_DB(db, db.hospitals.h_Name)
+
+auth.settings.table_user = custom_auth_table # tell auth to use custom_auth_table
+
+## before auth.define_tables()
+
 service = Service()
 plugins = PluginManager()
 

@@ -1,0 +1,8 @@
+{{extend 'layout.html'}}
+
+<div style="background: #f0f0f0; margin-bottom: 5px; padding: 8px;">
+    <!--{{=prod}}-->
+    
+    <h3>{{=name}}</h3>
+</div>
+{{pass}}
