@@ -1,4 +1,5 @@
 NE = IS_NOT_EMPTY()
+
 db.define_table(
     'customer',
     Field('user_ID',unique = True),
@@ -9,11 +10,11 @@ db.define_table(
     Field('billingAdd_ID'),
     Field('shippingAdd_ID'),
     Field('email'),
-    Field('is_Authorized',boolean),
+    Field('is_Authorized','boolean'),
     Field('password'),
     Field('group_ID'),
     Field('organization_ID'),
-    Field('is_Hospital',boolean)
+    Field('is_Hospital','boolean')
     )
 db.define_table(
     'address',
@@ -21,7 +22,7 @@ db.define_table(
     Field('typeofAddress'),
     Field('streetAddress'),
     Field('city'),
-    Field('state'),
+    Field('address_state'),
     Field('zip')
     )
 db.define_table(
@@ -29,23 +30,14 @@ db.define_table(
     Field('user_ID'),
     Field('product_ID')
     )
-db.define_table(
-    'hospitals',
-    Field('h_ID',unique = True),
-    Field('h_Name',required = True),
-    Field('email_Format'),
-    Field('size'),
-    Field('esn_ID',unique = True),
-    Field('for_Profit',boolean),
-    Field('contact_Email')
-    )
+
 db.define_table(
     'vendors',
     Field('v_ID',unique = True,required = True),
     Field('v_Name'),
     Field('p_Type')
     )
-db.define_Table(
+db.define_table(
     'product_Type',
     Field('pType_ID'),
     Field('v_ID'),
@@ -56,7 +48,7 @@ db.define_table(
     Field('code',requires=NE),
     Field('name',requires=NE),
     Field('description',requires=NE),
-    Field('qty_in_stock'),
+    Field('qty_in_stock','integer'),
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
     Field('tags'),
@@ -66,7 +58,7 @@ db.define_table(
     Field('on_sale','boolean',default=False),
     Field('tax','decimal(10,2)'),
     Field('keywords',required=True,
-          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
+          compute=lambda r: "%(code)s %(name)s %(tags)s %(p_Type)s" % r),
     auth.signature)
 
 db.define_table(
@@ -99,15 +91,21 @@ db.define_table(
 #db(db.auth_user.id>1).delete()
 #db(db.product).delete()
 if db(db.product).count()==0:
-    import random
-    from gluon.contrib.populate import populate
-    n = 10000
-    for name in ['Table','Chair','Desk','Shelves','Pen','Robot','Pillow','Bed','Car']:
-        for color in ['red','blue','greem','orange','yellow']:
-            n = n+1
-            db.product.insert(
-                code="%.5i" % n,
-                name=name,tags=name+' '+color,description='bla '*100,
-                unit_price=random.randint(10,1000),tax=0.10,
-                qty_in_stock=random.randint(0,100))
-                             
+    import re
+    import os
+    file = open(os.getcwd()+'/applications/estore3/models/save.txt', 'r')
+    for line in file:
+        l = re.split('\|',line)
+        db.product.insert(
+            code=l[0],
+            name=l[1],
+            description=l[2],
+            qty_in_stock=int(l[3]),
+            unit_price=float(l[4]),
+            image=l[5],
+            tags=l[6],
+            p_Type=l[7],
+            popularity=int(l[8]),
+            featured=int(l[9]),
+            on_sale=int(l[9]),
+            tax=0.10,)

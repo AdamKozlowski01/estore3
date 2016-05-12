@@ -8,6 +8,7 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
 
+
 def index():
     return dict()
 
@@ -80,6 +81,13 @@ def pay():
         redirect(URL('pay_error'))
     return dict(form=form)
 
+def product():
+    print request.vars['value']
+    prod = db(db.product.code == request.get_vars.value).select()
+    print prod
+    pName = prod[0]['name']
+    return locals()
+
 def thank_you():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
         redirect(URL('index'))
@@ -117,8 +125,13 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-    return dict(form=auth())
+    formOrg = SQLFORM(db.hospitals)
+    formOrg.process()
+    return dict(form=auth(), formOrg = formOrg)
 
+def myRegistration():
+    formOrg = SQLFORM(db.hospitals)
+    return dict(form=auth().register, formOrg=formOrg)
 
 @cache.action()
 def download():
@@ -137,5 +150,3 @@ def call():
     supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
     """
     return service()
-
-
