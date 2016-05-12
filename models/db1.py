@@ -30,7 +30,6 @@ db.define_table(
     Field('user_ID'),
     Field('product_ID')
     )
-
 db.define_table(
     'vendors',
     Field('v_ID',unique = True,required = True),
