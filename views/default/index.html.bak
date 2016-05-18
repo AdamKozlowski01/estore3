@@ -27,8 +27,6 @@
     {% /if %}
   </div>
 
-    from gluon.debug import dbg
-    dbg.set_trace() # stop here!
   <button class="btn btn-primary pull-right" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
 
   <center style="padding:50px">
@@ -37,7 +35,7 @@
         <div class="input-group">
           <div class="input-group-addon">Find Me</div>
           <input type="text" class="form-control" name="keywords" style="width:300px"
-                 placeholder="red chair">
+                 placeholder="">
         </div>
         <div class="input-group">
           <div class="input-group-addon">Max Price</div>
@@ -68,17 +66,11 @@
       {% #products: num %}
       <tr class="product" data-product="{% id %}">
         <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
-        <td><a href="#" on-click="select:{% id %}">{% name %}</a></td>
+        <td><a href="{{=URL('default','product', vars = dict(value = 0))}}">{% name %}</a></td>
         <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
-        </td>
-      </tr>
-      {% #if selectedProduct==id %}
-      <tr>
-        <td colspan="5">
-          {% description %}
         </td>
       </tr>
       {% /if %}
