@@ -1,162 +1,224 @@
-{{extend 'layout.html'}}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Health Tech Link</title>
+	<link rel="stylesheet" href="css/style.css" type="text/css">
 
-<div id="products"></div>
+<!-- Chat Bar Script ------------------------- 
+  <link href="css/mbExtruder.css" media="all" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
+    <script type="text/javascript" src="inc/jquery.hoverIntent.min.js"></script>
+    <script type="text/javascript" src="inc/jquery.mb.flipText.js"></script>
+    <script type="text/javascript" src="inc/mbExtruder.js"></script>
+    <script type="text/javascript">
 
-<script id="template" type="text/ractive">
 
-  <div class="shopping-cart">
-    <h4>Shopping Cart</h4>
-    <table class="table">
-      {% #cart %}
-      <tr>
-        <td>{% name %}</td>
-        <td>{% unit_price %}</td>
-        <td>x <input value="{% quantity_in_cart %}"/> =</td>
-        <td>${% unit_price*quantity_in_cart %}</td>
-      </tr>
-      {% /cart %}
-      <tr>
-        <td>TOTAL</td>
-        <td></td>
-        <td></td>
-        <td>${% total(cart) %}</td>
-      </tr>
-    </table>
-    {% #if cart.length>0 %}
-    <a class="btn btn-primary" on-click="submit-order" href="{{=URL('order_info')}}">Submit Order</a>
-    {% /if %}
-  </div>
 
-  <button class="btn btn-primary pull-right" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
 
-  <center style="padding:50px">
-    <form class="form-inline">
-      <div class="form-group">
-        <div class="input-group">
-          <div class="input-group-addon">Find Me</div>
-          <input type="text" class="form-control" name="keywords" style="width:300px"
-                 placeholder="">
-        </div>
-        <div class="input-group">
-          <div class="input-group-addon">Max Price</div>
-          <input type="text" class="form-control" name="price" style="width:100px"
-               placeholder="400.00">
-        </div>
-      </div>
-    <button type="submit" class="btn btn-primary" on-click="search">Search</button>
-    </form>
-  </center>
-  {% #if products.length==0 %}
-  <center>
-    <img src="{{=URL('static','images/cart.png')}}" style="width:400px"/>
-  </center>
-  {% /if %}
-  {% #if products.length>0 %}
-  <table class="table">    
-    <thead>
-      <tr>
-        <th>Image</th>
-        <th>Name</th>
-        <th>In Stock</th>
-        <th>Unit Price</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% #products: num %}
-      <tr class="product" data-product="{% id %}">
-        <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
-        <td><a href="{{=URL('default','product', vars = dict(value = 0))}}">{% name %}</a></td>
-        <td>{% qty_in_stock %}</td>
-        <td>${% unit_price %}</td>
-        <td>
-          <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
-        </td>
-      </tr>
-      {% /if %}
-      {% /products %}
-    </tbody>
-  </table>
-  {% /if %}
+-->
 
-  <!-- Modal -->
-  <div id="mymodal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
-      
-      <!-- Modal content-->
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title">Shopping Cart</h4>
-        </div>
-        <div class="modal-body">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-      </div>
-      </div>
-      
-    </div>
-  </div>
-  
-</script>
 
-<script>
-  var search_products_url = '{{=URL('search')}}';
-  var submit_order_url = '{{=URL('submit_order')}}';
-  jQuery(function(){
-    var loading = true;
 
-    MAIN = new Ractive({
-      el: '#products',
-      template: '#template',
-      delimiters: ['{%','%}'],
-      tripleDelimiters: [ '{%%', '%%}' ],     
-      data: { products: [], selectedProduct: 0, cart: [], products_by_id: {}, 
-              total: function(cart) {
-                var total = 0.0;
-                cart.map(function(p){total+=p.quantity_in_cart*p.unit_price;});
-                if(!loading) window.localStorage.setItem('cart', JSON.stringify(cart));
-                return total; }
-      }
-    });
 
-    var cart = window.localStorage.getItem('cart');
-    if(cart) MAIN.set('cart',eval('('+cart+')'));
-    loading = false;
+</head>
 
-    MAIN.on('select',function(event,id) {
-      MAIN.set('selectedProduct',id);
-    });
-    MAIN.on('buy',function(event,id) {
-      id = parseInt(id);
-      var product = MAIN.data.products_by_id[id];  
-      var found=false;
-      for(var k=0; k<MAIN.data.cart.length; k++)
-         if(MAIN.data.cart[k].id==id) {found=true; MAIN.data.cart[k].quantity_in_cart++;}
-      if(!found) {product.quantity_in_cart=1; MAIN.data.cart.push(product); }
-      MAIN.set('cart',MAIN.data.cart);
-      jQuery.web2py.flash('Added to Cart');
-    });
-    MAIN.on('search',function(event){
-      event.original.preventDefault();
-      var form = jQuery('form');
-      MAIN.set('selectedProduct',0);
-      jQuery('.product').show();  
-      jQuery.getJSON(search_products_url,form.serialize()).done(function(data){
-          var product_by_id = {};
-          jQuery.web2py.enableElement(form.find('.disabled'));
-          MAIN.set('products',data);
-          MAIN.set('products_by_id',product_by_id);
-          for(var k=0; k<data.length; k++) MAIN.data.products_by_id[data[k].id]=data[k];
-      });
-    });
-    MAIN.on('submit-order',function(event){
-      event.original.preventDefault();
-      jQuery.post(submit_order_url,{cart:JSON.stringify(MAIN.data.cart)}).done(function(){
-         window.location = jQuery(event.node).attr('href');
-         MAIN.set('cart',[]);
-      });
-    });
-  });
-</script>
+<body>
+	<div class="background">
+		<div class="page">
+			<a href="index.html" id="logo">Health Tech Link</a>
+			
+<!-- SIDE BAR ------------------------------------------------------------------------------------------------------------->			
+			<div class="sidebar">
+				<ul>
+					<li class="selected">
+						<a href="index.html">Home</a>
+					</li>
+					
+					<li>
+						<a href="products.html">Products</a>
+					</li>
+					
+					<li>
+						<a href="networks.html">Networks</a>
+					</li>
+					
+					<li>
+						<a href="vendors.html">Vendors</a>
+					</li>
+					
+					<li>
+						<a href="about.html">About</a>
+					</li>
+					
+					<li>
+						<a href="resources.html">Resources</a>
+					</li>
+						
+				</ul>
+				
+				<div class="first">
+					<div>
+						<h3>Information you can trust!</h3>
+						<img src="images/man.jpg" alt="">
+						<p>
+							Each vendor is required to provide detailed information; backed by documentation! 
+						</p>
+					</div>
+				</div>
+				<div>
+					<div>
+						<h3>PLACE HOLDER</h3>
+						<p>
+							Some text
+						</p>
+						<img src="images/doctors-and-nurse.jpg" alt="">
+						<p>
+							 More text
+						</p>
+					</div>
+				</div>
+			</div> <!-- close sidebar div -->
+			
+<!-- BODY ------------------------------------------------------------------------------------------------------------->	
+			
+			<div class="body">
+				<div class="home">
+					<div class="featured">
+						<img src="images/doctors.jpg" alt="">
+						<div>
+							<p>
+								
+								TYPE SOMETHING AWESOME HERE! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+								!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!
+								
+								
+							</p>
+						</div>
+					</div>
+					<div>
+						<div>
+							<div>
+								<h4>Featured Product</h4>
+								<h3>Name of Featured Product</h3>
+								<p>
+									
+									Info about product
+									
+									<!-- for imagie of product --> 
+									<a href="  "><img src="        " alt="" ></a> 
+									
+								</p>
+								<span><a href=<!-- Link Here to the Product-->Learn More</a></span>
+							</div>
+							<div>
+								<h4>Recommended</h4>
+								<h2>Name of recommended Product </h2>
+								
+								Info about product
+									
+									<!-- for imagie of product --> 
+									<a href="  "><img src="        " alt=""></a> 
+								
+								<span><a href=<!-- Link Here to the Product-->Learn More</a></span>
+								
+						
+								
+							</div>
+							
+							
+							<div>
+								<h4>Recommended</h4>
+								<h2>Name of recommended Product 2</h2>
+								
+								Info about product
+									
+									<!-- for imagie of product --> 
+									<a href="  "><img src="        " alt=""></a> 
+								
+								<span><a href=<!-- Link Here to the Product-->Learn More</a></span>
+								
+						
+								
+							</div>
+							
+							
+							<div>
+								<h4>Recommended</h4>
+								<h2>Name of recommended Product 3</h2>
+								
+								Info about product
+									
+									<!-- for imagie of product --> 
+									<a href="  "><img src="        " alt=""></a> 
+								
+								<span><a href=<!-- Link Here to the Product-->Learn More</a></span>
+								
+						
+								
+							</div>
+							
+							
+							
+						</div>
+						<div>
+							<h4>Chat</h4>
+							
+							<!-- CHAT GOES HERE -->
+							
+							
+							
+							
+						</div>
+					</div>
+				</div>
+			</div>
+			
+
+<!-- FOOTER------------------------------------------------------------------------------------------------------------->			
+			
+			<div class="footer">
+				<div>
+					<div>
+						<h4>About</h4>
+						<p>
+							Learn about why we made this website.
+						</p>
+						<a href="about.html">About</a>
+					</div>
+					<div>
+						<h4>Links</h4>
+						<ul>
+							<li>
+								<a href="index.html">Home</a>
+							</li>
+							<li>
+								<a href="products.html">Products</a>
+							</li>
+							<li>
+								<a href="networks.html">Networks</a>
+							</li>
+							<li>
+								<a href="Vendors.html">Vendors</a>
+							</li>
+							<li>
+								<a href="About.html">About</a>
+							</li>
+							<li>
+								<a href="resources.html">Resources</a>
+							</li>
+						</ul>
+					</div>
+					<div class="connect">
+						<h4>Keep In Touch</h4>
+						<a href="" id="twitter">twitter</a> <a href="" id="facebook">facebook</a> <a href="" id="googleplus">google+</a>
+					</div>
+				</div>
+				<p>
+					&#169; Copyright 2016. All rights reserved
+				</p>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
