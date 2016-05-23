@@ -82,11 +82,29 @@ def pay():
     return dict(form=form)
 
 def product():
+<<<<<<< HEAD
     print request.vars['value']
     prod = db(db.product.code == request.get_vars.value).select()
     print prod
     pName = prod[0]['name']
+=======
+    prod = db(db.product.id == request.get_vars.value).select()
+    if prod[0] is not None:
+        pName = prod[0]['name']
+        pDescription = prod[0]['description']
+        #pwhatever = prod[0]['name of table column']
+>>>>>>> Adam
     return locals()
+
+def orgDetails():
+    org = db(db.hospitals.id == request.get_vars.value).select()
+    if org[0] is not None:
+        oName = org[0]['h_Name']
+        #oWhatever...
+    return locals()
+
+def userDetails():
+    #TO-DO
 
 def thank_you():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
