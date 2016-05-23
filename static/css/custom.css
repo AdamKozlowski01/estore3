@@ -4,22 +4,22 @@
 .shopping-cart {
    display: none;   
    padding: 10px;
-   border-top: 5px solid orange;
-   border-bottom: 5px solid orange;
+   border-top: 5px solid #0070B2;
+   border-bottom: 5px solid #0070B2;
 }
 .to-cart {
    width:50px;
    cursor: pointer;
 }
 .navbar, .inverse-navbar {
-   background: orange !important;
+   background: #0070B2 !important;
    border-color: white;
 }
 .navbar-inverse .navbar-brand, .navbar-inverse .navbar-nav>li>a {
    color: white;
 }
 .navbar-inverse .navbar-brand:hover {
-   color: red;
+   color: #FF9506;
 }
 .shopping-cart table {
    max-width: 400px;
@@ -33,9 +33,9 @@
   filter: FlipH;                 /* IE 6/7/8 */
 }
 .btn-primary {
-  background: orange;
+  background: #0070B2;
   border: 0;
 }
 .btn-primary:hover {
-  background: red;
+  background: #FF9506;
 }
