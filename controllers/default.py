@@ -83,7 +83,7 @@ def pay():
 
 def product():
     print request.vars['value']
-    prod = db(db.product.id == request.get_vars.value).select()
+    prod = db(db.product.code == request.get_vars.value).select()
     print prod
     pName = prod[0]['name']
     return locals()
@@ -125,20 +125,12 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-    #formOrg = FORM('Organization Name', INPUT(_name = 'name'), 'Organization Size', INPUT(_size = 'size'), 'ESN',  INPUT(_esn = 'esn_ID', ), 'Non-Profit', \
-    #           INPUT(_forProfit = 'profit'), 'contact_Email', INPUT(_email = 'email'), INPUT(_type = 'Submit'))
-    
+    return dict(form=auth())
 
-    form=auth()
+def RegisterOrganization():
     formOrg = SQLFORM(db.hospitals)
-    if formOrg.process().accepted:
-        response.flash = 'form accepted'
-        redirect(URL('index'))
-    elif formOrg.errors:
-        response.flash = 'form has errors'
-    else:
-        response.flash = 'please fill out all user fields.'
-    return dict(form=form, formOrg = formOrg)
+    formOrg.process() 
+    return dict(formOrg = formOrg)
 
 @cache.action()
 def download():
