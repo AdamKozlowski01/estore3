@@ -65,8 +65,8 @@
     <tbody>
       {% #products: num %}
       <tr class="product" data-product="{% id %}">
-        <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
-        <td><a href="{{=URL('default','product', vars = dict(value = 0))}}">{% name %}</a></td>
+        <td><img src="{{=URL('default','download')}}/{% image %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
+        <td><a href="{{=URL('default','product')}}?value={% id %}">{% name %}</a></td>
         <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
         <td>
@@ -112,7 +112,7 @@
       template: '#template',
       delimiters: ['{%','%}'],
       tripleDelimiters: [ '{%%', '%%}' ],     
-      data: { products: [], selectedProduct: 0, cart: [], products_by_id: {}, 
+      data: { products: [], selectedProduct: 0, cart: [], products_by_id: {}, image: '',
               total: function(cart) {
                 var total = 0.0;
                 cart.map(function(p){total+=p.quantity_in_cart*p.unit_price;});
@@ -148,6 +148,7 @@
           jQuery.web2py.enableElement(form.find('.disabled'));
           MAIN.set('products',data);
           MAIN.set('products_by_id',product_by_id);
+		  MAIN.set('image',image);
           for(var k=0; k<data.length; k++) MAIN.data.products_by_id[data[k].id]=data[k];
       });
     });

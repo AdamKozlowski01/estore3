@@ -17,11 +17,14 @@ def search():
     price = request.vars.price
     page = int(request.vars.page or 0)
     queries = []
+    image = request.vars.image
     if keywords:
         queries.append(reduce(lambda a,b:a&b,
                               [db.product.keywords.contains(k) for k in keywords]))
     if price:
         queries.append(db.product.unit_price<=float(price))
+    if image:
+        queries.append(db.product.image)
     if not queries: query = db.product
     else: query = reduce(lambda a,b: a&b, queries)    
     return db(query).select(limitby=(page*100,page*100+100)).as_json()
