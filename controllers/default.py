@@ -144,10 +144,10 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-    form=auth()            
+    form=auth()
     return dict(form=form)
 
-def registerOrg():
+def RegisterOrganization():
 
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:
