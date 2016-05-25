@@ -2,85 +2,45 @@ NE = IS_NOT_EMPTY()
 
 db.define_table(
     'customer',
-    Field('user_ID',unique = True, NE),
+    Field('user_ID',unique = True),
     Field('firstName'),
     Field('middleName',required = False),
     Field('lastName'),
     Field('profession'),
+    Field('billingAdd_ID'),
+    Field('shippingAdd_ID'),
     Field('email'),
     Field('is_Authorized','boolean'),
     Field('password'),
     Field('group_ID'),
     Field('organization_ID'),
-<<<<<<< HEAD
     Field('is_Hospital','boolean')
-=======
-    Field('is_Hospital',boolean),
-    auth.signature
->>>>>>> Adam
     )
 db.define_table(
     'address',
-    Field('organization_ID'),
+    Field('user_ID'),
     Field('typeofAddress'),
     Field('streetAddress'),
     Field('city'),
-<<<<<<< HEAD
     Field('address_state'),
     Field('zip')
-=======
-    Field('state'),
-    Field('zip'),
-    auth.signature
->>>>>>> Adam
     )
 db.define_table(
     'wishList',
     Field('user_ID'),
-    Field('product_ID'),
-    auth.signature
+    Field('product_ID')
     )
+
 db.define_table(
-<<<<<<< HEAD
-    'hospitals',
-    Field('h_ID',unique = True),
-    Field('h_Name',required = True),
-    Field('email_Format'),
-    Field('h_size'),
-    Field('esn_ID',unique = True),
-<<<<<<< HEAD
-    Field('for_Profit','boolean'),
-    Field('contact_Email')
-=======
-    Field('for_Profit',boolean),
-    Field('contact_Email'),
-    Field('billingAdd_ID'),
-    Field('shippingAdd_ID'),
-    auth.signature
->>>>>>> Adam
-    )
-db.define_table(
-=======
->>>>>>> master
     'vendors',
     Field('v_ID',unique = True,required = True),
     Field('v_Name'),
-<<<<<<< HEAD
     Field('p_Type')
     )
 db.define_table(
-=======
-    Field('contant_Email'),
-
-    auth.signature)
-db.define_Table(
->>>>>>> Adam
     'product_Type',
     Field('pType_ID'),
-    Field('v_ID'),
-    Field('category'),
-    Field('vendorID')
-    auth.signature
+    Field('category')
     )
 db.define_table(
     'product',
@@ -95,10 +55,14 @@ db.define_table(
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
+    Field('v_ID', 'reference hospitals'),
     Field('tax','decimal(10,2)'),
     Field('keywords',required=True,
           compute=lambda r: "%(code)s %(name)s %(tags)s %(p_Type)s" % r),
     auth.signature)
+
+productTable = db['product']
+productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
 
 db.define_table(
     'purchase_order',

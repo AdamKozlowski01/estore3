@@ -65,7 +65,7 @@
     <tbody>
       {% #products: num %}
       <tr class="product" data-product="{% id %}">
-        <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
+        <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
         <td>${% qty_in_stock %}</td>
         <td>${% unit_price %}</td>

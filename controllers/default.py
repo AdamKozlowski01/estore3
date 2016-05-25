@@ -98,6 +98,8 @@ def orgDetails():
 
 def userDetails():
     #TO-DO
+    return locals()
+    
 
 def thank_you():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
@@ -136,12 +138,59 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-    return dict(form=auth())
+    form=auth()            
+    return dict(form=form)
 
-def RegisterOrganization():
+def registerOrg():
+
     formOrg = SQLFORM(db.hospitals)
-    formOrg.process() 
-    return dict(formOrg = formOrg)
+    if formOrg.process().accepted:
+        response.flash = 'form accepted'
+        #check to see if this user needs to have highest privledges
+        redirect(URL('user/register'))
+    elif formOrg.errors:
+        response.flash = 'form has errors'
+
+    return dict(form = formOrg)
+
+@auth.requires_login()
+def orgAdmin():
+    """
+    if the user is logged in check to see if they should be the admin
+    """
+    me = auth.user_id
+    orgAdminID = 5 #retrieved from auth_group
+    user = db(auth.settings.table_user.id == me).select()
+    if user[0] is not None:
+        org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)
+        if org[0].contact_Email is not None:
+            db.auth_membership.insert(user_id = me, group_id = orgAdminID)
+            redirect(URL('index'))
+            response.flash = "You are an OrgAdmin now, congratulations!"
+    return True
+
+@auth.requires_membership('OrgAdmin')
+def manageProducts():
+    me = auth.user_id
+    user = db(auth.settings.table_user.id == me).select()
+    products = db(db.product.v_ID == user[0].Organization_id).select(db.product.ALL)
+
+    #products = products.as_dict()
+    return products.as_dict()
+
+@auth.requires_membership('OrgAdmin')
+def uploadProduct():
+    form = SQLFORM(db.product)
+    return dict(form = form);
+
+@auth.requires_membership('OrgAdmin')
+def editProduct():
+    record = db.product(request.args(0))
+    form = SQLFORM(db.product, record)
+    if form.process().accepted:
+        redirect(URL('manageProducts'))
+    return dict(form=form)
+
 
 @cache.action()
 def download():
