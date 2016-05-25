@@ -86,7 +86,13 @@ def product():
     if prod[0] is not None:
         pName = prod[0]['name']
         pDescription = prod[0]['description']
-        #pwhatever = prod[0]['name of table column']
+        pImage = prod[0]['image']
+        pType = prod[0]['category']
+        pOrgID = prod[0]['v_ID']
+        org = db(db.hospitals.id == pOrgID).select()
+        oName = org[0]['h_Name']
+        pPrice = prod[0]['unit_price']
+        pStock = prod[0]['qty_in_stock']
     return locals()
 
 def orgDetails():

@@ -51,14 +51,14 @@ db.define_table(
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
     Field('tags'),
-    Field('p_Type'),
+    Field('category'),
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
     Field('v_ID', 'reference hospitals'),
     Field('tax','decimal(10,2)'),
     Field('keywords',required=True,
-          compute=lambda r: "%(code)s %(name)s %(tags)s %(p_Type)s" % r),
+          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
 
 productTable = db['product']
