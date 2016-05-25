@@ -10,6 +10,14 @@
 
 
 def index():
+    form = SQLFORM(Post, formstyle='divs')
+    if form.process().accepted:
+        #js = "jQuery('.new').slideDown('slow')"
+        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
+        pass
+    messages = db(Post).select(orderby=~Post.created_on)
+    return dict(form=form, messages=messages)
+    #messaging()
     return dict()
 
 def search():

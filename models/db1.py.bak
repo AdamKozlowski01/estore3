@@ -1,4 +1,5 @@
 NE = IS_NOT_EMPTY()
+
 db.define_table(
     'customer',
     Field('user_ID',unique = True),
@@ -29,16 +30,7 @@ db.define_table(
     Field('user_ID'),
     Field('product_ID')
     )
-db.define_table(
-    'hospitals',
-    Field('h_ID',unique = True),
-    Field('h_Name',required = True),
-    Field('email_Format'),
-    Field('h_size'),
-    Field('esn_ID',unique = True),
-    Field('for_Profit','boolean'),
-    Field('contact_Email')
-    )
+
 db.define_table(
     'vendors',
     Field('v_ID',unique = True,required = True),
@@ -48,7 +40,6 @@ db.define_table(
 db.define_table(
     'product_Type',
     Field('pType_ID'),
-    Field('v_ID'),
     Field('category')
     )
 db.define_table(
@@ -60,14 +51,18 @@ db.define_table(
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
     Field('tags'),
-    Field('p_Type'),
+    Field('category'),
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
+    Field('v_ID', 'reference hospitals'),
     Field('tax','decimal(10,2)'),
     Field('keywords',required=True,
-          compute=lambda r: "%(code)s %(name)s %(tags)s %(p_type)s" % r),
+          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
+
+productTable = db['product']
+productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
 
 db.define_table(
     'purchase_order',
