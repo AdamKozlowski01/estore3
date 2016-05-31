@@ -24,12 +24,18 @@ def search():
         queries.append(db.product.unit_price<=float(price))
     if not queries: query = db.product
     else: query = reduce(lambda a,b: a&b, queries)    
-    return db(query).select(limitby=(page*100,page*100+100)).as_json()
+    return db(query).select(limitby=(page*100,page*100+100), orderby=~db.product.rating).as_json()
 
 def submit_order():
     import json
     session.cart = json.loads(request.vars.cart)
     return 'ok'
+
+def getRating():
+    prod_id = request.vars.product
+    avg = db.vote.rating.avg()
+    row = db(db.vote.prodID == prod_id).select(avg.first())
+    db(db.product.id == product_id).update(rating = row[avg])
 
 @auth.requires_login()
 def order_info():
@@ -86,18 +92,37 @@ def product():
     if prod[0] is not None:
         pName = prod[0]['name']
         pDescription = prod[0]['description']
-        #pwhatever = prod[0]['name of table column']
+        pImage = prod[0]['image']
+        pAvgRating = prod[0]['rating']
+        pType = prod[0]['category']
+        pOrgID = prod[0]['v_ID']
+        org = db(db.hospitals.id == pOrgID).select()
+        oName = org[0]['h_Name']
+        pPrice = prod[0]['unit_price']
+        pStock = prod[0]['qty_in_stock']
     return locals()
 
 def orgDetails():
     org = db(db.hospitals.id == request.get_vars.value).select()
     if org[0] is not None:
         oName = org[0]['h_Name']
-        #oWhatever...
+        oSize = org[0]['h_size']
+        oForProfit = org[0]['for_Profit']
+        oContactEmail = org[0]['contact_Email']
+
     return locals()
 
 def userDetails():
-    #TO-DO
+    user = db(db.auth.settings.table_user == request.get_vars.value).select()
+    if user[0] is not None:
+        pFirstName = user[0]['first_name']
+        pLastName = user[0]['last_name']
+        pPosition = user[0]['job_title']
+        pOrganizationID = user[0]['Organization_id']
+        org = db(db.hospitals.id == pOrganizationID).select()
+        oName = org[0]['h_Name']
+    return locals()
+    
 
 def thank_you():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
@@ -136,20 +161,59 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-    #formOrg = FORM('Organization Name', INPUT(_name = 'name'), 'Organization Size', INPUT(_size = 'size'), 'ESN',  INPUT(_esn = 'esn_ID', ), 'Non-Profit', \
-    #           INPUT(_forProfit = 'profit'), 'contact_Email', INPUT(_email = 'email'), INPUT(_type = 'Submit'))
-    
+    form=auth()            
+    return dict(form=form)
 
-    form=auth()
+def registerOrg():
+
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:
         response.flash = 'form accepted'
-        redirect(URL('index'))
+        #check to see if this user needs to have highest privledges
+        redirect(URL('user/register'))
     elif formOrg.errors:
         response.flash = 'form has errors'
-    else:
-        response.flash = 'please fill out all user fields.'
-    return dict(form=form, formOrg = formOrg)
+
+    return dict(form = formOrg)
+
+@auth.requires_login()
+def orgAdmin():
+    """
+    if the user is logged in check to see if they should be the admin
+    """
+    me = auth.user_id
+    orgAdminID = 3 #retrieved from auth_group
+    user = db(auth.settings.table_user.id == me).select()
+    if user[0] is not None:
+        org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)
+        if org[0].contact_Email is not None:
+            db.auth_membership.insert(user_id = me, group_id = orgAdminID)
+            redirect(URL('index'))
+            response.flash = "You are an OrgAdmin now, congratulations!"
+    return
+
+@auth.requires_membership('OrgAdmin')
+def manageProducts():
+    me = auth.user_id
+    user = db(auth.settings.table_user.id == me).select()
+    products = db(db.product.v_ID == user[0].Organization_id).select(db.product.ALL)
+
+    #products = products.as_dict()
+    return products.as_dict()
+
+@auth.requires_membership('OrgAdmin')
+def uploadProduct():
+    form = SQLFORM(db.product)
+    return dict(form = form);
+
+@auth.requires_membership('OrgAdmin')
+def editProduct():
+    record = db.product(request.args(0))
+    form = SQLFORM(db.product, record)
+    if form.process().accepted:
+        redirect(URL('manageProducts'))
+    return dict(form=form)
+
 
 @cache.action()
 def download():

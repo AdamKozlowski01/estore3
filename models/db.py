@@ -61,12 +61,13 @@ db.define_table(
                 Field('h_size', label = 'Organization Size'),
                 Field('esn_ID',unique = True),
                 Field('for_Profit','boolean'),
-                Field('contact_Email')
+                Field('contact_Email', comment = 'Please make sure this email matches the one you will register with if you are the admin.\nYou can change it later')
                 )
 db.define_table(
                 auth.settings.table_user_name,
                 Field('first_name', length=128, default=''),
                 Field('last_name', length=128, default=''),
+                Field('job_title', length=128, default=''),
                 Field('email', length=128, default='', unique = True), # required
                 Field('password', 'password', length=512,            # required
                       readable=False, label='Password'),
@@ -110,9 +111,13 @@ mail.settings.sender = myconf.take('smtp.sender')
 mail.settings.login = myconf.take('smtp.login')
 
 ## configure auth policy
-auth.settings.registration_requires_verification = True
+auth.settings.login_after_registration = True
+auth.settings.registration_requires_verification = False
 auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
+auth.settings.create_user_groups = False
+auth.settings.register_next = URL('default','orgAdmin')
+
 
 #########################################################################
 ## Define your tables below (or better in another model file) for example

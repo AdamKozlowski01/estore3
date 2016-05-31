@@ -40,9 +40,9 @@ db.define_table(
 db.define_table(
     'product_Type',
     Field('pType_ID'),
-    Field('v_ID'),
     Field('category')
     )
+
 db.define_table(
     'product',
     Field('code',requires=NE),
@@ -52,14 +52,27 @@ db.define_table(
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
     Field('tags'),
-    Field('p_Type'),
+    Field('category'),
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
+    Field('v_ID', 'reference hospitals'),
     Field('tax','decimal(10,2)'),
+    Field('rating', 'float', default=3),
     Field('keywords',required=True,
-          compute=lambda r: "%(code)s %(name)s %(tags)s %(p_Type)s" % r),
+          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
+
+db.define_table(
+    'review',
+    Field('prodID', 'reference product'),
+    Field('userID', 'reference ' + auth.settings.table_user_name),
+    Field('rating', 'float'),
+    Field('review_text','text')
+    )
+
+productTable = db['product']
+productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
 
 db.define_table(
     'purchase_order',
@@ -90,6 +103,27 @@ db.define_table(
 
 #db(db.auth_user.id>1).delete()
 #db(db.product).delete()
+
+'''
+db.define_table(
+    'product',
+    Field('code',requires=NE),
+    Field('name',requires=NE),
+    Field('description',requires=NE),
+    Field('qty_in_stock','integer'),
+    Field('unit_price','decimal(10,2)'),
+    Field('image','upload'),
+    Field('tags'),
+    Field('category'),
+    Field('popularity','integer',default=0),
+    Field('featured','boolean',default=False),
+    Field('on_sale','boolean',default=False),
+    Field('v_ID', 'reference hospitals'),
+    Field('tax','decimal(10,2)'),
+    Field('keywords',required=True,
+          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
+    auth.signature)
+'''
 if db(db.product).count()==0:
     import re
     import os
@@ -104,8 +138,9 @@ if db(db.product).count()==0:
             unit_price=float(l[4]),
             image=l[5],
             tags=l[6],
-            p_Type=l[7],
+            category = l[7],
             popularity=int(l[8]),
             featured=int(l[9]),
-            on_sale=int(l[9]),
-            tax=0.10,)
+            on_sale=int(l[10]),
+            v_ID = l[11],
+            tax=0.10)

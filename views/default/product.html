@@ -2,7 +2,54 @@
 
 <div style="background: #f0f0f0; margin-bottom: 5px; padding: 8px;">
     <!--{{=prod}}-->
-    
-    <h3>{{=pName}}</h3>
+    <div class="first">
+
+		<div>
+			<h3>{{=pName}}</h3>
+
+			<img src="images/man.jpg" alt="">
+			<p>
+				{{=pDescription}}
+			</p>
+		</div>
+	</div>
+	<div class="body">
+				<div class="programs">
+					<div>
+						<div>
+							<div>
+								<h3>Product Info</h3>
+								<ul>
+									<li>
+										<p>
+											Price: {{=pPrice}}
+										</p>
+									</li>
+									<li>
+										<p>
+											{{=pStock}} in Stock
+										</p>
+									</li>
+									<li>
+										<p>
+											{{=pType}}
+										</p>
+									</li>
+									<li>
+										<p>
+											Sold By: <a href="{{=(URL('default', 'orgDetails', vars = dict(value = pOrgID)))}}">{{=oName}}</a>
+										</p>
+									</li>
+									<li>
+										<p>
+											Rating: TO DO
+										</p>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 </div>
 {{pass}}

@@ -59,16 +59,18 @@
         <th>Name</th>
         <th>In Stock</th>
         <th>Unit Price</th>
+        <th>Rating</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% #products: num %}
       <tr class="product" data-product="{% id %}">
-        <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
+        <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
-        <td>${% qty_in_stock %}</td>
+        <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
+        <td>{%rating%}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
@@ -94,10 +96,32 @@
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
       </div>
-      
     </div>
   </div>
   
+</script>
+
+<input class="form-control rating" value="3.5" data-prod="47"/>
+
+<script>
+    jQuery('input.rating').each(function(){
+        var span = jQuery('<span style="white-space:nowrap" />');
+        var self = jQuery(this).hide().after(span);
+        var fill_stars = function() {
+            var k = parseInt(self.val()) || 0;
+            for(var i=1; i<6; i++) span.find('.rate'+i).html((i<=k)?'&#x2605;':'&#x2606;');
+        };
+        for(var k=1; k<6; k++) (function(k){
+                span.append('<span class="rate'+k+'">&#x2606;</span>');
+                span.find('.rate'+k).mouseover(function(){
+                        for(var i=1; i<6; i++) span.find('.rate'+i).html((i<=k)?'&#x2605;':'&#x2606;');
+                    }).click(function(){ self.val(k); fill_stars();
+                        jQuery.post('{{=URL('getRating')}}',{'product':self.attr('data-prod')});
+                    });
+        })(k);
+        span.mouseout(fill_stars);
+        fill_stars();
+    });
 </script>
 
 <script>
