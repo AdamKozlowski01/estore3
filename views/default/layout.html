@@ -50,16 +50,6 @@
     <!--[if lt IE 8]><p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p><![endif]-->
     <div class="flash alert alert-dismissable">{{=response.flash or ''}}</div>
     <!-- Navbar ======================================= -->
-      <div class="right-sidebar">
-      <nav class="navbar-inverse navbar-fixed-top">
-      <div class="reply-area">
-          {{=LOAD('default','textbox.load',ajax=True)}}
-        </div>
-        <div class="collapse navbar-collapse navbar-ex1-collapse">
-          {{pass}}
-        </div>
-      </div>
-    </nav>
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
       <div class="container-fluid">
         <div class="navbar-header">
@@ -68,23 +58,18 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
           </button>
           {{=response.logo or ''}}
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
           <ul class="nav navbar-nav navbar-right">
+            <a href = "{{=URL('default','RegisterOrganization')}}">Register Organization</a>
             {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
-            
           </ul>
-          {{if response.menu:}}
-            {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
-            {{pass}}
-          {{pass}}
         </div>
       </div>
     </nav>
-    <!-- Masthead ===================================== -->    
+    <!-- Masthead ===================================== -->
     {{block header}}
     {{end}}
     <!-- Main ========================================= -->
@@ -118,17 +103,6 @@
 
     {{block ads}}{{end}}
 
-    <!--{{block footer}} <! this is default footer ->      
-    <footer class="footer">
-      <div class="container-fluid">
-        <div class="copyright pull-left">{{=T('Copyright')}} &#169; {{=request.now.year}}</div>
-          <div id="poweredBy" class="pull-right">
-            {{=T('Powered by')}}
-            <a href="http://www.web2py.com/">web2py</a>
-          </div>
-      </div>
-    </footer> -->
-    {{end}}
     <!-- The javascript =============================== -->
     <script src="{{=URL('static','js/bootstrap.min.js')}}"></script>
     <script src="{{=URL('static','js/ractive.min.js')}}"></script>
