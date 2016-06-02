@@ -6,6 +6,8 @@
    padding: 10px;
    border-top: 5px solid #0070B2;
    border-bottom: 5px solid #0070B2;
+   position: absolute;
+   left: 0px;
 }
 .to-cart {
    width:50px;
@@ -22,7 +24,7 @@
    color: #FF9506;
 }
 .shopping-cart table {
-   max-width: 400px;
+   max-width: 0px;
 }
 .flip {
   display: inline-block;

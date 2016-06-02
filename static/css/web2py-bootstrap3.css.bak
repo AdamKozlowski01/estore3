@@ -108,8 +108,8 @@ select.autocomplete {
     background: url(../images/background.jpg) no-repeat center center;
 }
 body {
-    padding-top: 65px;
-    margin-bottom: 0px;
+    padding-top: 50px;
+    margin-bottom: 60px;
 }
 header {
     -webkit-box-shadow: 0 0 8px 2px #000;
