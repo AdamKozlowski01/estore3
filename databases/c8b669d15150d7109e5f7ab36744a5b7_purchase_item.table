@@ -162,11 +162,7 @@ sS'type'
 p46
 S'string'
 p47
-<<<<<<< HEAD
 ssS'featured'
-=======
-ssS'created_on'
->>>>>>> Jack
 p48
 (dp49
 g4
@@ -174,37 +170,22 @@ I512
 sg5
 I00
 sg6
-<<<<<<< HEAD
 I13
 sg7
 S'CHAR(1)'
-=======
-I19
-sg7
-S'TIMESTAMP'
->>>>>>> Jack
 p50
 sg9
 I00
 sg10
-<<<<<<< HEAD
 g25
 ssS'created_by'
 p51
 (dp52
-=======
-S'datetime'
-p51
-ssS'unit_price'
-p52
-(dp53
->>>>>>> Jack
 g4
 I512
 sg5
 I00
 sg6
-<<<<<<< HEAD
 I20
 sg7
 S'INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  '
@@ -214,16 +195,6 @@ I00
 sg10
 S'reference auth_user'
 p54
-=======
-I8
-sg7
-S'DOUBLE'
-p54
-sg9
-I00
-sg10
-g33
->>>>>>> Jack
 ssS'keywords'
 p55
 (dp56
@@ -288,18 +259,10 @@ p67
 sg9
 I00
 sg10
-<<<<<<< HEAD
 g54
 ssS'name'
 p68
 (dp69
-=======
-S'reference auth_user'
-p68
-ssS'name'
-p69
-(dp70
->>>>>>> Jack
 g4
 I512
 sg5
@@ -308,23 +271,14 @@ sg6
 I5
 sg7
 S'CHAR(512)'
-<<<<<<< HEAD
 p70
-=======
-p71
->>>>>>> Jack
 sg9
 I00
 sg10
 g15
 ssS'popularity'
-<<<<<<< HEAD
 p71
 (dp72
-=======
-p72
-(dp73
->>>>>>> Jack
 g4
 I512
 sg5
@@ -333,23 +287,14 @@ sg6
 I12
 sg7
 S'INTEGER'
-<<<<<<< HEAD
 p73
-=======
-p74
->>>>>>> Jack
 sg9
 I00
 sg10
 g37
 ssS'on_sale'
-<<<<<<< HEAD
 p74
 (dp75
-=======
-p75
-(dp76
->>>>>>> Jack
 g4
 I512
 sg5
@@ -358,30 +303,19 @@ sg6
 I14
 sg7
 S'CHAR(1)'
-<<<<<<< HEAD
 p76
-=======
-p77
->>>>>>> Jack
 sg9
 I00
 sg10
 g25
-<<<<<<< HEAD
 ssS'created_on'
 p77
 (dp78
-=======
-ssS'featured'
-p78
-(dp79
->>>>>>> Jack
 g4
 I512
 sg5
 I00
 sg6
-<<<<<<< HEAD
 I19
 sg7
 S'TIMESTAMP'
@@ -392,17 +326,6 @@ sg10
 S'datetime'
 p80
 ssS'unit_price'
-=======
-I13
-sg7
-S'CHAR(1)'
-p80
-sg9
-I00
-sg10
-g25
-ssS'created_by'
->>>>>>> Jack
 p81
 (dp82
 g4
@@ -410,24 +333,14 @@ I512
 sg5
 I00
 sg6
-<<<<<<< HEAD
 I8
 sg7
 S'DOUBLE'
-=======
-I20
-sg7
-S'INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  '
->>>>>>> Jack
 p83
 sg9
 I00
 sg10
-<<<<<<< HEAD
 g33
-=======
-g68
->>>>>>> Jack
 ssS'purchase_order'
 p84
 (dp85
@@ -460,11 +373,7 @@ p90
 sg9
 I00
 sg10
-<<<<<<< HEAD
 g80
-=======
-g51
->>>>>>> Jack
 ssS'v_id'
 p91
 (dp92

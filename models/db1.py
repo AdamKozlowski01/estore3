@@ -132,13 +132,8 @@ if db(db.product).count()==0:
             popularity=int(l[8]),
             featured=int(l[9]),
             on_sale=int(l[10]),
-<<<<<<< HEAD
             v_ID = l[11]
             tax=0.10,)
-=======
-            v_ID = l[11],
-            tax=0.10)
->>>>>>> Jack
 
         response.generic_patterns = ['*'] if request.is_local else []
 from gluon.tools import Auth, prettydate

@@ -22,11 +22,7 @@ sS'type'
 p10
 S'string'
 p11
-<<<<<<< HEAD
 ssS'email_format'
-=======
-ssS'for_profit'
->>>>>>> Jack
 p12
 (dp13
 g4
@@ -34,20 +30,13 @@ I512
 sg5
 I00
 sg6
-<<<<<<< HEAD
 I3
 sg7
 S'CHAR(512)'
-=======
-I6
-sg7
-S'CHAR(1)'
->>>>>>> Jack
 p14
 sg9
 I00
 sg10
-<<<<<<< HEAD
 g11
 ssS'esn_id'
 p15
@@ -61,27 +50,10 @@ I5
 sg7
 S'CHAR(512) UNIQUE'
 p17
-=======
-S'boolean'
-p15
-ssS'email_format'
-p16
-(dp17
-g4
-I512
-sg5
-I00
-sg6
-I3
-sg7
-S'CHAR(512)'
-p18
->>>>>>> Jack
 sg9
 I00
 sg10
 g11
-<<<<<<< HEAD
 ssS'h_name'
 p18
 (dp19
@@ -94,39 +66,18 @@ I2
 sg7
 S'CHAR(512)'
 p20
-=======
-ssS'esn_id'
-p19
-(dp20
-g4
-I512
-sg5
-I01
-sg6
-I5
-sg7
-S'CHAR(512) UNIQUE'
-p21
->>>>>>> Jack
 sg9
 I00
 sg10
 g11
-<<<<<<< HEAD
 ssS'for_profit'
 p21
 (dp22
-=======
-ssS'h_name'
-p22
-(dp23
->>>>>>> Jack
 g4
 I512
 sg5
 I00
 sg6
-<<<<<<< HEAD
 I6
 sg7
 S'CHAR(1)'
@@ -136,16 +87,6 @@ I00
 sg10
 S'boolean'
 p24
-=======
-I2
-sg7
-S'CHAR(512)'
-p24
-sg9
-I00
-sg10
-g11
->>>>>>> Jack
 ssS'contact_email'
 p25
 (dp26

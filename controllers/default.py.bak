@@ -10,17 +10,6 @@
 
 
 def index():
-<<<<<<< HEAD
-=======
-    form = SQLFORM(Post, formstyle='divs')
-    if form.process().accepted:
-        #js = "jQuery('.new').slideDown('slow')"
-        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
-        pass
-    messages = db(Post).select(orderby=~Post.created_on)
-    return dict(form=form, messages=messages)
-    #messaging()
->>>>>>> Jack
     return dict()
 
 def search():
@@ -155,17 +144,10 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-<<<<<<< HEAD
     form=auth()            
     return dict(form=form)
 
 def registerOrg():
-=======
-    form=auth()
-    return dict(form=form)
-
-def RegisterOrganization():
->>>>>>> Jack
 
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:

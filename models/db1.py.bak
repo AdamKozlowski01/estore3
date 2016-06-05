@@ -93,30 +93,6 @@ db.define_table(
 
 #db(db.auth_user.id>1).delete()
 #db(db.product).delete()
-<<<<<<< HEAD
-=======
-
-'''
-db.define_table(
-    'product',
-    Field('code',requires=NE),
-    Field('name',requires=NE),
-    Field('description',requires=NE),
-    Field('qty_in_stock','integer'),
-    Field('unit_price','decimal(10,2)'),
-    Field('image','upload'),
-    Field('tags'),
-    Field('category'),
-    Field('popularity','integer',default=0),
-    Field('featured','boolean',default=False),
-    Field('on_sale','boolean',default=False),
-    Field('v_ID', 'reference hospitals'),
-    Field('tax','decimal(10,2)'),
-    Field('keywords',required=True,
-          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
-    auth.signature)
-'''
->>>>>>> Jack
 if db(db.product).count()==0:
     import re
     import os
@@ -131,29 +107,8 @@ if db(db.product).count()==0:
             unit_price=float(l[4]),
             image=l[5],
             tags=l[6],
-<<<<<<< HEAD
             p_Type=l[7],
             popularity=int(l[8]),
             featured=int(l[9]),
             on_sale=int(l[9]),
             tax=0.10,)
-=======
-            category = l[7],
-            popularity=int(l[8]),
-            featured=int(l[9]),
-            on_sale=int(l[10]),
-            v_ID = l[11],
-            tax=0.10)
-
-        response.generic_patterns = ['*'] if request.is_local else []
-from gluon.tools import Auth, prettydate
-auth = Auth(db, hmac_key = Auth.get_or_create_key())
-auth.define_tables()
-
-Post = db.define_table("post",
-                       Field("textmessage","text",requires=IS_NOT_EMPTY(),notnull=True),
-                       auth.signature
-                       )
-Post.is_active_readable = False
-Post.is_active_writable = False
->>>>>>> Jack

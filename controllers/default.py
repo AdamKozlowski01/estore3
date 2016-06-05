@@ -8,17 +8,6 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
 
-<<<<<<< HEAD
-=======
-def textbox():
-    form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
-    if form.process().accepted:
-        #js = "jQuery('.new').slideDown('slow')"
-        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
-        pass
-    messages = db(Post).select(orderby=~Post.created_on)
-    return dict(form=form, messages=messages)
->>>>>>> Jack
 
 def index():
     form = SQLFORM(Post, formstyle='divs')
