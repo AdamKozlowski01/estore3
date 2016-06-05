@@ -45,6 +45,7 @@ sS'type'
 p20
 S'string'
 p21
+<<<<<<< HEAD
 ssS'first_name'
 p22
 (dp23
@@ -56,6 +57,19 @@ sg6
 I2
 sg7
 S'CHAR(128)'
+=======
+ssS'registration_id'
+p22
+(dp23
+g4
+I512
+sg5
+I00
+sg6
+I9
+sg7
+S'CHAR(512)'
+>>>>>>> Jack
 p24
 sg9
 I00
@@ -167,6 +181,7 @@ sg36
 I00
 sg37
 g38
+<<<<<<< HEAD
 ssS'registration_id'
 p53
 (dp54
@@ -178,6 +193,19 @@ sg6
 I9
 sg7
 S'CHAR(512)'
+=======
+ssS'first_name'
+p53
+(dp54
+g4
+I128
+sg5
+I00
+sg6
+I2
+sg7
+S'CHAR(128)'
+>>>>>>> Jack
 p55
 sg9
 I00
