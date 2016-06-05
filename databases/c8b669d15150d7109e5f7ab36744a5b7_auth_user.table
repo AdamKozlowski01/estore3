@@ -45,17 +45,17 @@ sS'type'
 p20
 S'string'
 p21
-ssS'first_name'
+ssS'registration_id'
 p22
 (dp23
 g4
-I128
+I512
 sg5
 I00
 sg6
-I2
+I9
 sg7
-S'CHAR(128)'
+S'CHAR(512)'
 p24
 sg9
 I00
@@ -69,7 +69,7 @@ I512
 sg5
 I00
 sg6
-I7
+I6
 sg7
 S'INTEGER REFERENCES hospitals (id) ON DELETE CASCADE  '
 p27
@@ -125,7 +125,7 @@ I512
 sg5
 I00
 sg6
-I6
+I5
 sg7
 S'CHAR(512)'
 p44
@@ -167,17 +167,17 @@ sg36
 I00
 sg37
 g38
-ssS'registration_id'
+ssS'first_name'
 p53
 (dp54
 g4
-I512
+I128
 sg5
 I00
 sg6
-I10
+I2
 sg7
-S'CHAR(512)'
+S'CHAR(128)'
 p55
 sg9
 I00
@@ -191,7 +191,7 @@ I512
 sg5
 I00
 sg6
-I8
+I7
 sg7
 S'CHAR(512)'
 p58
@@ -223,7 +223,7 @@ I512
 sg5
 I00
 sg6
-I9
+I8
 sg7
 S'CHAR(512)'
 p64
@@ -285,7 +285,7 @@ I128
 sg5
 I01
 sg6
-I5
+I4
 sg7
 S'CHAR(128) UNIQUE'
 p87

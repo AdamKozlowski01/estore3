@@ -63,6 +63,9 @@ db.define_table(
           compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
 
+productTable = db['product']
+productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
+
 db.define_table(
     'review',
     Field('prodID', 'reference product'),
@@ -144,3 +147,15 @@ if db(db.product).count()==0:
             on_sale=int(l[10]),
             v_ID = l[11],
             tax=0.10)
+
+response.generic_patterns = ['*'] if request.is_local else []
+from gluon.tools import Auth, prettydate
+auth = Auth(db, hmac_key = Auth.get_or_create_key())
+auth.define_tables()
+
+Post = db.define_table("post",
+                       Field("textmessage","text",requires=IS_NOT_EMPTY(),notnull=True),
+                       auth.signature
+                       )
+Post.is_active_readable = False
+Post.is_active_writable = False

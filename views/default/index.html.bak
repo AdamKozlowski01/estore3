@@ -65,15 +65,24 @@
     <tbody>
       {% #products: num %}
       <tr class="product" data-product="{% id %}">
+<<<<<<< HEAD
         <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default','product', vars = dict(value = 0))}}">{% name %}</a></td>
         <td>{% qty_in_stock %}</td>
+=======
+        <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
+        <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
+        <td>${% qty_in_stock %}</td>
+>>>>>>> Jack
         <td>${% unit_price %}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
       </tr>
+<<<<<<< HEAD
       {% /if %}
+=======
+>>>>>>> Jack
       {% /products %}
     </tbody>
   </table>
@@ -127,6 +136,12 @@
 
     MAIN.on('select',function(event,id) {
       MAIN.set('selectedProduct',id);
+<<<<<<< HEAD
+=======
+      //JQuery.post('{{=URL('product', 'vars = dict(value = id)')}}';
+      //JQuery.web2py.session.redirect(URL('default', 'product', vars = dict(value = MAIN.data.selectedProduct)));
+
+>>>>>>> Jack
     });
     MAIN.on('buy',function(event,id) {
       id = parseInt(id);
@@ -136,11 +151,19 @@
          if(MAIN.data.cart[k].id==id) {found=true; MAIN.data.cart[k].quantity_in_cart++;}
       if(!found) {product.quantity_in_cart=1; MAIN.data.cart.push(product); }
       MAIN.set('cart',MAIN.data.cart);
+<<<<<<< HEAD
       jQuery.web2py.flash('Added to Cart');
     });
     MAIN.on('search',function(event){
       event.original.preventDefault();
       var form = jQuery('form');
+=======
+      jQuery.web2py.flash('Added to Wishlist');
+    });
+    MAIN.on('search',function(event){
+      event.original.preventDefault();
+      var form = jQuery('form');http://127.0.0.1:8000/HealthTechLink/default/index#
+>>>>>>> Jack
       MAIN.set('selectedProduct',0);
       jQuery('.product').show();  
       jQuery.getJSON(search_products_url,form.serialize()).done(function(data){
