@@ -42,7 +42,15 @@
 									</li>
 									<li>
 										<p>
-											Rating: {{=pAvgRating}}
+											Rating: 
+											<div>
+												{{for i in range(5):}}
+													{{if i <= (pAvgRating-1):}} <img src="{{=URL('static','images/heart.png')}}" style = "width:20px;height:20px;"/>
+													{{elif (pAvgRating-1-i) < 1.0 and (pAvgRating-1-i) > 0.0:}} <img src="{{=URL('static','images/heartHalf.png')}}" style = "width:20px;height:20px;"/>
+													{{else:}} <img src="{{=URL('static','images/heartEmpty.png')}}" style = "width:20px;height:20px;"/>
+													{{pass}}
+												{{pass}}
+											</div>
 										</p>
 									</li>
 								</ul>
@@ -57,7 +65,12 @@
 			{{=review.title}}
 		</div>
 		<div>
-			{{=review.rating}}
+			{{for j in range(5):}}
+				{{if j <= (review.rating-1):}} <img src="{{=URL('static','images/heart.png')}}" style = "width:10px;height:10px;"/>
+				{{elif (review.rating-1-j) < 1.0 and (review.rating-1-j)> 0.0:}} <img src="{{=URL('static','images/heartHalf.png')}}" style = "width:10px;height:10px;"/>
+				{{else:}} <img src="{{=URL('static','images/heartEmpty.png')}}" style = "width:10px;height:10px;"/>
+				{{pass}}
+			{{pass}}
 		</div>
 		<div>
 			{{=review.review_text}}
