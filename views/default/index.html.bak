@@ -1,6 +1,8 @@
 {{extend 'layout.html'}}
+{{include 'scrollBar.html'}}
 
 <div id="products"></div>
+
 
 <script id="template" type="text/ractive">
 
@@ -33,14 +35,9 @@
     <form class="form-inline">
       <div class="form-group">
         <div class="input-group">
-          <div class="input-group-addon">Find Me</div>
+          <div class="input-group-addon">Search</div>
           <input type="text" class="form-control" name="keywords" style="width:300px"
                  placeholder="">
-        </div>
-        <div class="input-group">
-          <div class="input-group-addon">Max Price</div>
-          <input type="text" class="form-control" name="price" style="width:100px"
-               placeholder="400.00">
         </div>
       </div>
     <button type="submit" class="btn btn-primary" on-click="search">Search</button>
@@ -48,7 +45,7 @@
   </center>
   {% #if products.length==0 %}
   <center>
-    <img src="{{=URL('static','images/cart.png')}}" style="width:400px"/>
+    <img src="{{=URL('static','logo.png')}}" style="width:400px"/>
   </center>
   {% /if %}
   {% #if products.length>0 %}
@@ -59,21 +56,22 @@
         <th>Name</th>
         <th>In Stock</th>
         <th>Unit Price</th>
+        <th>Rating</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% #products: num %}
       <tr class="product" data-product="{% id %}">
-        <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
-        <td><a href="{{=URL('default','product', vars = dict(value = 0))}}">{% name %}</a></td>
+        <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
+        <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
         <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
+        <td>{%rating%}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
       </tr>
-      {% /if %}
       {% /products %}
     </tbody>
   </table>
@@ -93,13 +91,16 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          
       </div>
       </div>
-      
     </div>
   </div>
   
+  
 </script>
+
+
 
 <script>
   var search_products_url = '{{=URL('search')}}';
@@ -127,6 +128,9 @@
 
     MAIN.on('select',function(event,id) {
       MAIN.set('selectedProduct',id);
+      //JQuery.post('{{=URL('product', 'vars = dict(value = id)')}}';
+      //JQuery.web2py.session.redirect(URL('default', 'product', vars = dict(value = MAIN.data.selectedProduct)));
+
     });
     MAIN.on('buy',function(event,id) {
       id = parseInt(id);
@@ -136,11 +140,11 @@
          if(MAIN.data.cart[k].id==id) {found=true; MAIN.data.cart[k].quantity_in_cart++;}
       if(!found) {product.quantity_in_cart=1; MAIN.data.cart.push(product); }
       MAIN.set('cart',MAIN.data.cart);
-      jQuery.web2py.flash('Added to Cart');
+      jQuery.web2py.flash('Added to Wishlist');
     });
     MAIN.on('search',function(event){
       event.original.preventDefault();
-      var form = jQuery('form');
+      var form = jQuery('form');http://127.0.0.1:8000/HealthTechLink/default/index#
       MAIN.set('selectedProduct',0);
       jQuery('.product').show();  
       jQuery.getJSON(search_products_url,form.serialize()).done(function(data){

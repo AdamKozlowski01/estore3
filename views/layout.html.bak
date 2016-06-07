@@ -115,7 +115,7 @@
       {{pass}}
       
     </div>
-    {{include 'scrollBar.html'}}
+      {{include 'scrollBar'}}
     {{block ads}}{{end}}
     <!-- Masthead ===================================== -->    
     {{block header}}
