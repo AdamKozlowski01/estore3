@@ -43,9 +43,9 @@ def postRating():
     prod_id = request.vars.product
     avg = db.review.rating.avg()
     row = db(db.review.prodID == prod_id).select(avg).first()
-    product = db(db.product.id == prod_id)
-    product.update(rating = row[avg])
-    print row[avg]
+    product = db(db.product.id == prod_id).select().first()
+    product.rating = row[avg]
+    product.update_record()
     redirect(URL('default', 'product', vars = dict(value = prod_id)))
 
 @auth.requires_login()

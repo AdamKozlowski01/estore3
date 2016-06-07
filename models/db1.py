@@ -70,12 +70,10 @@ db.define_table(
     'review',
     Field('prodID', 'reference product'),
     Field('userID', 'reference ' + auth.settings.table_user_name),
-    Field('rating', 'float'),
+    Field('title', length = 128),
+    Field('rating', requires=IS_IN_SET([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5])),
     Field('review_text','text')
     )
-
-productTable = db['product']
-productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
 
 db.define_table(
     'purchase_order',
