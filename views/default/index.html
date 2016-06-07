@@ -59,6 +59,7 @@
         <th>Name</th>
         <th>In Stock</th>
         <th>Unit Price</th>
+        <th>Rating</th>
         <th></th>
       </tr>
     </thead>
@@ -67,8 +68,9 @@
       <tr class="product" data-product="{% id %}">
         <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
-        <td>${% qty_in_stock %}</td>
+        <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
+        <td>{%rating%}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
@@ -94,7 +96,6 @@
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
       </div>
-      
     </div>
   </div>
   

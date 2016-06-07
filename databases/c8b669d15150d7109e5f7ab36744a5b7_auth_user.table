@@ -177,7 +177,7 @@ I00
 sg6
 I9
 sg7
-S'CHAR(512)'
+S'CHAR(128)'
 p55
 sg9
 I00
@@ -289,6 +289,22 @@ I4
 sg7
 S'CHAR(128) UNIQUE'
 p87
+sg9
+I00
+sg10
+g11
+ssS'job_title'
+p88
+(dp89
+g4
+I128
+sg5
+I00
+sg6
+I4
+sg7
+S'CHAR(128)'
+p90
 sg9
 I00
 sg10

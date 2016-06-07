@@ -1,0 +1,698 @@
+(dp1
+S'output'
+p2
+S"<class 'sqlite3.IntegrityError'> FOREIGN KEY constraint failed"
+p3
+sS'layer'
+p4
+S'/Users/master1/Capstone/web2py/applications/HealthTechLink/controllers/default.py'
+p5
+sS'code'
+p6
+S'# -*- coding: utf-8 -*-\n# this file is released under public domain and you can use without limitations\n\n#########################################################################\n## This is a sample controller\n## - index is the default action of any application\n## - user is required for authentication and authorization\n## - download is for downloading files uploaded in the db (does streaming)\n#########################################################################\n\n\ndef index():\n    return dict()\n\ndef search():\n    keywords = request.vars.keywords.split() if request.vars.keywords else []\n    price = request.vars.price\n    page = int(request.vars.page or 0)\n    queries = []\n    if keywords:\n        queries.append(reduce(lambda a,b:a&b,\n                              [db.product.keywords.contains(k) for k in keywords]))\n    if price:\n        queries.append(db.product.unit_price<=float(price))\n    if not queries: query = db.product\n    else: query = reduce(lambda a,b: a&b, queries)    \n    return db(query).select(limitby=(page*100,page*100+100)).as_json()\n\ndef submit_order():\n    import json\n    session.cart = json.loads(request.vars.cart)\n    return \'ok\'\n\n@auth.requires_login()\ndef order_info():\n    if not session.cart:\n        redirect(URL(\'index\'))\n    db.purchase_order.buyer_name.default = \'%(first_name)s %(last_name)s\' % auth.user\n    form = SQLFORM(db.purchase_order).process()\n    if form.accepted:\n        total_balance = 0\n        for item in session.cart:\n            item[\'product\'] = item[\'id\']\n            item[\'purchase_order\'] = form.vars.id\n            del item[\'id\']\n            db.purchase_item.insert(**item)\n            total_balance += item[\'unit_price\']*int(item[\'quantity_in_cart\'])\n        session.cart = None\n        db(db.purchase_order.id==form.vars.id).update(total_balance=total_balance)\n        redirect(URL(\'pay\',args=form.vars.id, hmac_key=STRIPE_SECRET_KEY))\n    return dict(form=form)\n\ndef pay():\n    if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):\n        redirect(URL(\'index\'))\n    from gluon.contrib.stripe import StripeForm\n    response.flash = None # never show a response.flash\n    order = db.purchase_order(request.args(0,cast=int))\n    if not order or order.amount_paid:\n        session.flash = \'you paid already!\'\n        redirect(URL(\'index\'))\n    amount = order.total_balance\n    description ="..."\n    form = StripeForm(\n        pk=STRIPE_PUBLISHABLE_KEY,\n        sk=STRIPE_SECRET_KEY,\n        amount=int(100*amount),\n        description=description).process()\n    if form.accepted:\n        code = \'[%s/%s]\' % (order.id,form.response[\'id\'])\n        auth.settings.mailer.send(\n            to=auth.user.email,\n            subject=\'...\',\n            message=\'Your payment of $%.2f has been processed %s\' % (\n                amount, code))\n        order.update_record(total_balance=0,amount_paid=amount,\n                            payment_id=form.response[\'id\'],\n                            paid_on=request.now)\n        redirect(URL(\'thank_you\', vars=dict(code=code), hmac_key=STRIPE_SECRET_KEY))\n    elif form.errors:\n        redirect(URL(\'pay_error\'))\n    return dict(form=form)\n\ndef product():\n    print request.vars[\'value\']\n    prod = db(db.product.code == request.get_vars.value).select()\n    print prod\n    pName = prod[0][\'name\']\n    return locals()\n\ndef thank_you():\n    if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):\n        redirect(URL(\'index\'))\n    return locals()\n\ndef pay_error():\n    return locals()\n\n@auth.requires_membership(\'manager\')\ndef my_orders():\n    db.purchase_order._common_filter = lambda query: query&(db.purchase_order.created_by==auth.user.id)\n    return dict(grid=SQLFORM.smartgrid(db.purchase_order,create=False,editable=False,deletable=False,csv=False))\n\n@auth.requires_membership(\'manager\')\ndef manage_products():\n    return dict(grid=SQLFORM.grid(db.product))\n\n@auth.requires_membership(\'manager\')\ndef manage_orders():\n    return dict(grid=SQLFORM.smartgrid(db.purchase_order))\n\ndef user():\n    """\n    exposes:\n    http://..../[app]/default/user/login\n    http://..../[app]/default/user/logout\n    http://..../[app]/default/user/register\n    http://..../[app]/default/user/profile\n    http://..../[app]/default/user/retrieve_password\n    http://..../[app]/default/user/change_password\n    http://..../[app]/default/user/manage_users (requires membership in\n    http://..../[app]/default/user/bulk_register\n    use @auth.requires_login()\n        @auth.requires_membership(\'group name\')\n        @auth.requires_permission(\'read\',\'table name\',record_id)\n    to decorate functions that need access control\n    """\n    formOrg = SQLFORM(db.hospitals,fields = [\'h_Name\', \'h_size\', \'esn_ID\', \'for_Profit\', \'contact_Email\'])\n    if formOrg.process().accepted:\n        response.flash = \'form accepted\'\n        redirect(URL(\'index\'))\n    elif formOrg.errors:\n        response.flash = \'form has errors\'\n    else:\n        response.flash = \'please fill out all fields\'\n    return dict(form=auth(), formOrg = formOrg)\n\n@cache.action()\ndef download():\n    """\n    allows downloading of uploaded files\n    http://..../[app]/default/download/[filename]\n    """\n    return response.download(request, db)\n\n\ndef call():\n    """\n    exposes services. for example:\n    http://..../[app]/default/call/jsonrpc\n    decorate with @services.jsonrpc the functions to expose\n    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv\n    """\n    return service()\n\nresponse._vars=response._caller(user)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+S'exception'
+p10
+(dp11
+S'__module__'
+p12
+S"'sqlite3'"
+p13
+sS'__getslice__'
+p14
+S"<method-wrapper '__getslice__' of IntegrityError object>"
+p15
+sS'__str__'
+p16
+S"<method-wrapper '__str__' of IntegrityError object>"
+p17
+sS'__reduce__'
+p18
+S'<built-in method __reduce__ of IntegrityError object>'
+p19
+sS'__dict__'
+p20
+S'{}'
+p21
+sS'__sizeof__'
+p22
+S'<built-in method __sizeof__ of IntegrityError object>'
+p23
+sS'__weakref__'
+p24
+S'None'
+p25
+sS'__init__'
+p26
+S"<method-wrapper '__init__' of IntegrityError object>"
+p27
+sS'__setattr__'
+p28
+S"<method-wrapper '__setattr__' of IntegrityError object>"
+p29
+sS'__reduce_ex__'
+p30
+S'<built-in method __reduce_ex__ of IntegrityError object>'
+p31
+sS'__new__'
+p32
+S'<built-in method __new__ of type object>'
+p33
+sS'__format__'
+p34
+S'<built-in method __format__ of IntegrityError object>'
+p35
+sS'__class__'
+p36
+S"<class 'sqlite3.IntegrityError'>"
+p37
+sS'__doc__'
+p38
+S'None'
+p39
+sS'__getitem__'
+p40
+S"<method-wrapper '__getitem__' of IntegrityError object>"
+p41
+sS'__setstate__'
+p42
+S'<built-in method __setstate__ of IntegrityError object>'
+p43
+sS'__getattribute__'
+p44
+S"<method-wrapper '__getattribute__' of IntegrityError object>"
+p45
+sS'args'
+p46
+S"('FOREIGN KEY constraint failed',)"
+p47
+sS'__subclasshook__'
+p48
+S'<built-in method __subclasshook__ of type object>'
+p49
+sS'__unicode__'
+p50
+S'<built-in method __unicode__ of IntegrityError object>'
+p51
+sS'__delattr__'
+p52
+S"<method-wrapper '__delattr__' of IntegrityError object>"
+p53
+sS'__repr__'
+p54
+S"<method-wrapper '__repr__' of IntegrityError object>"
+p55
+sS'__hash__'
+p56
+S"<method-wrapper '__hash__' of IntegrityError object>"
+p57
+ssS'evalue'
+p58
+S'FOREIGN KEY constraint failed'
+p59
+sS'request'
+p60
+cgluon.html
+XML_unpickle
+p61
+(S'sYc\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">ajax</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">application</td><td style="vertical-align:top;">:</td><td><div>HealthTechLink</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">args</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>register</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cid</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">client</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">controller</td><td style="vertical-align:top;">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">session_id_admin</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-d49472d3-2026-4be6-be36-ec56109ef146<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_healthtechlink</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-27b3a7d7-5a05-41fb-ab75-4dde96702613<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_welcome</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-9f83ad10-f910-431e-8b84-d425295eccd6<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">env</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">CONTENT_LENGTH</td><td style="vertical-align:top;">:</td><td><div>1076</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">CONTENT_TYPE</td><td style="vertical-align:top;">:</td><td><div>multipart/form-data; boundary=----WebKitFormBoundaryK8a7DOCq6tr15Hgw</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT</td><td style="vertical-align:top;">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT_ENCODING</td><td style="vertical-align:top;">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT_LANGUAGE</td><td style="vertical-align:top;">:</td><td><div>en-us</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONNECTION</td><td style="vertical-align:top;">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONTENT_LENGTH</td><td style="vertical-align:top;">:</td><td><div>1076</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONTENT_TYPE</td><td style="vertical-align:top;">:</td><td><div>multipart/form-data; boundary=----WebKitFormBoundaryK8a7DOCq6tr15Hgw</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_COOKIE</td><td style="vertical-align:top;">:</td><td><div>session_id_admin=127.0.0.1-d49472d3-2026-4be6-be36-ec56109ef146; session_id_healthtechlink=127.0.0.1-27b3a7d7-5a05-41fb-ab75-4dde96702613; session_id_welcome=127.0.0.1-9f83ad10-f910-431e-8b84-d425295eccd6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_HOST</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ORIGIN</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_REFERER</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000/HealthTechLink/default/user/register?_next=/HealthTechLink/default/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_USER_AGENT</td><td style="vertical-align:top;">:</td><td><div>Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">PATH_INFO</td><td style="vertical-align:top;">:</td><td><div>/HealthTechLink/default/user/register</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">QUERY_STRING</td><td style="vertical-align:top;">:</td><td><div>_next=/HealthTechLink/default/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_ADDR</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_PORT</td><td style="vertical-align:top;">:</td><td><div>62061</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REQUEST_METHOD</td><td style="vertical-align:top;">:</td><td><div>POST</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SCRIPT_NAME</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_NAME</td><td style="vertical-align:top;">:</td><td><div>loop-depaulsecure-234-119.depaulsecure-student.depaul.edu</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PORT</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PROTOCOL</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_SOFTWARE</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;/Users/master1/Capstone/web2py/applications/admin/&#x27;, &#x27;/Users/master1/Capstone/web2py/applications/HealthTechLink/&#x27;, &#x27;/Users/master1/Capstone/web2py/applications/welcome/&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>/Users/master1/Capstone/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x1110e0e18: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;loop-depaulsecure-234-119.depaulsecure-student.depaul.edu&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;port&#x27;: 8000, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;/Users/master1/Capstone/web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;******&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">content_length</td><td style="vertical-align:top;">:</td><td><div>1076</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">content_type</td><td style="vertical-align:top;">:</td><td><div>multipart/form-data; boundary=----WebKitFormBoundaryK8a7DOCq6tr15Hgw</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>/Users/master1/Capstone/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept</td><td style="vertical-align:top;">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept_encoding</td><td style="vertical-align:top;">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept_language</td><td style="vertical-align:top;">:</td><td><div>en-us</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_connection</td><td style="vertical-align:top;">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_content_length</td><td style="vertical-align:top;">:</td><td><div>1076</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_content_type</td><td style="vertical-align:top;">:</td><td><div>multipart/form-data; boundary=----WebKitFormBoundaryK8a7DOCq6tr15Hgw</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_cookie</td><td style="vertical-align:top;">:</td><td><div>session_id_admin=127.0.0.1-d49472d3-2026-4be6-be36-ec56109ef146; session_id_healthtechlink=127.0.0.1-27b3a7d7-5a05-41fb-ab75-4dde96702613; session_id_welcome=127.0.0.1-9f83ad10-f910-431e-8b84-d425295eccd6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_host</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_origin</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_referer</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000/HealthTechLink/default/user/register?_next=/HealthTechLink/default/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_user_agent</td><td style="vertical-align:top;">:</td><td><div>Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>loop-depaulsecure-234-119.depaulsecure-student.depaul.edu</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>75.102.234.119</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path_info</td><td style="vertical-align:top;">:</td><td><div>/HealthTechLink/default/user/register</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">query_string</td><td style="vertical-align:top;">:</td><td><div>_next=/HealthTechLink/default/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_addr</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_port</td><td style="vertical-align:top;">:</td><td><div>62061</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_method</td><td style="vertical-align:top;">:</td><td><div>POST</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_uri</td><td style="vertical-align:top;">:</td><td><div>/HealthTechLink/default/user/register?_next=/HealthTechLink/default/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">script_name</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_name</td><td style="vertical-align:top;">:</td><td><div>loop-depaulsecure-234-119.depaulsecure-student.depaul.edu</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_port</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_protocol</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_software</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_path</td><td style="vertical-align:top;">:</td><td><div>/Users/master1/Capstone/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.14.5-stable+timestamp.2016.04.14.03.26.16</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x1100891e0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x111085808&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x116ec86d0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x1100891e0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x111085808&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x116ec86d0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">extension</td><td style="vertical-align:top;">:</td><td><div>html</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">folder</td><td style="vertical-align:top;">:</td><td><div>/Users/master1/Capstone/web2py/applications/HealthTechLink/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">function</td><td style="vertical-align:top;">:</td><td><div>user</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">global_settings</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;/Users/master1/Capstone/web2py/applications/admin/&#x27;, &#x27;/Users/master1/Capstone/web2py/applications/HealthTechLink/&#x27;, &#x27;/Users/master1/Capstone/web2py/applications/welcome/&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>/Users/master1/Capstone/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x1110e0e18: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;loop-depaulsecure-234-119.depaulsecure-student.depaul.edu&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;port&#x27;: 8000, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;/Users/master1/Capstone/web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;******&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>/Users/master1/Capstone/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>loop-depaulsecure-234-119.depaulsecure-student.depaul.edu</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>75.102.234.119</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.14.5-stable+timestamp.2016.04.14.03.26.16</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_https</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_local</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_restful</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_scheduler</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_shell</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">now</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 5, 19, 13, 55, 39, 281861)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">raw_args</td><td style="vertical-align:top;">:</td><td><div>register</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">raw_extension</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">url</td><td style="vertical-align:top;">:</td><td><div>/HealthTechLink/default/user/register</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">utcnow</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 5, 19, 18, 55, 39, 281981)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi</td><td style="vertical-align:top;">:</td><td><div>&lt;gluon.main.LazyWSGI object at 0x115ab26d0&gt;</div></td></tr></table></div>'
+tRp62
+sS'frames'
+p63
+(lp64
+(dp65
+S'file'
+p66
+S'/Users/master1/Capstone/web2py/gluon/restricted.py'
+p67
+sS'dump'
+p68
+(dp69
+S'environment'
+p70
+S"{'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}"
+p71
+sS'ccode'
+p72
+S'<code object <module> at 0x116c2a930, file "/Use.../HealthTechLink/controllers/default.py", line 12>'
+p73
+ssS'lnum'
+p74
+I227
+sS'lines'
+p75
+(dp76
+I224
+S'            ccode = code'
+p77
+sI225
+S'        else:'
+p78
+sI226
+S'            ccode = compile2(code, layer)'
+p79
+sI227
+S'        exec ccode in environment'
+p80
+sI228
+S'    except HTTP:'
+p81
+sI229
+S'        raise'
+p82
+sI230
+S'    except RestrictedError:'
+p83
+sI231
+S'        # do not encapsulate (obfuscate) the original RestrictedError'
+p84
+sI222
+S'    try:'
+p85
+sI223
+S'        if isinstance(code, types.CodeType):'
+p86
+ssS'call'
+p87
+S"(code='# -*- coding: utf-8 -*-\\n# this file is released ...service()\\n\\nresponse._vars=response._caller(user)\\n', environment={'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}, layer='/Users/master1/Capstone/web2py/applications/HealthTechLink/controllers/default.py')"
+p88
+sS'func'
+p89
+S'restricted'
+p90
+sa(dp91
+g66
+S'/Users/master1/Capstone/web2py/applications/HealthTechLink/controllers/default.py'
+p92
+sg68
+(dp93
+sg74
+I156
+sg75
+(dp94
+I145
+S''
+sI146
+S''
+sI147
+S'def call():'
+p95
+sI148
+S'    """'
+p96
+sI149
+S'    exposes services. for example:'
+p97
+sI150
+S'    http://..../[app]/default/call/jsonrpc'
+p98
+sI151
+S'    decorate with @services.jsonrpc the functions to expose'
+p99
+sI152
+S'    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv'
+p100
+sI153
+S'    """'
+p101
+sI154
+S'    return service()'
+p102
+ssg87
+S'()'
+p103
+sg89
+S'<module>'
+p104
+sa(dp105
+g66
+S'/Users/master1/Capstone/web2py/gluon/globals.py'
+p106
+sg68
+(dp107
+S'self'
+p108
+S'undefined'
+p109
+sS'f'
+S'<function user>'
+p110
+ssg74
+I417
+sg75
+(dp111
+I416
+S'        self._vars = None'
+p112
+sI417
+S'        self._caller = lambda f: f()'
+p113
+sI418
+S'        self._view_environment = None'
+p114
+sI419
+S'        self._custom_commit = None'
+p115
+sI420
+S'        self._custom_rollback = None'
+p116
+sI421
+S"        self.generic_patterns = ['*']"
+p117
+sI412
+S"        self.flash = ''            # used by the default view layout"
+p118
+sI413
+S'        self.meta = Storage()      # used by web2py_ajax.html'
+p119
+sI414
+S'        self.menu = []             # used by the default view layout'
+p120
+sI415
+S'        self.files = []            # used by web2py_ajax.html'
+p121
+ssg87
+S'(f=<function user>)'
+p122
+sg89
+S'<lambda>'
+p123
+sa(dp124
+g66
+S'/Users/master1/Capstone/web2py/applications/HealthTechLink/controllers/default.py'
+p125
+sg68
+(dp126
+S'global auth'
+p127
+S'<gluon.tools.Auth object>'
+p128
+sS'formOrg'
+p129
+S'<gluon.sqlhtml.SQLFORM object>'
+p130
+sS'form'
+p131
+g109
+sS'builtindict'
+p132
+S"<type 'dict'>"
+p133
+ssg74
+I136
+sg75
+(dp134
+I131
+S"        redirect(URL('index'))"
+p135
+sI132
+S'    elif formOrg.errors:'
+p136
+sI133
+S"        response.flash = 'form has errors'"
+p137
+sI134
+S'    else:'
+p138
+sI135
+S"        response.flash = 'please fill out all fields'"
+p139
+sI136
+S'    return dict(form=auth(), formOrg = formOrg)'
+p140
+sI137
+S''
+sI138
+S'@cache.action()'
+p141
+sI139
+S'def download():'
+p142
+sI140
+S'    """'
+p143
+ssg87
+S'()'
+p144
+sg89
+S'user'
+p145
+sa(dp146
+g66
+S'/Users/master1/Capstone/web2py/gluon/tools.py'
+p147
+sg68
+(dp148
+S'self'
+p149
+S'<gluon.tools.Auth object>'
+p150
+sS'args'
+p151
+S"['register']"
+p152
+sS'builtingetattr'
+p153
+S'<built-in function getattr>'
+p154
+ssg74
+I1939
+sg75
+(dp155
+I1934
+S"                       'impersonate', 'not_authorized', 'confirm_registration',"
+p156
+sI1935
+S"                       'bulk_register','manage_tokens','jwt'):"
+p157
+sI1936
+S"            if len(request.args) >= 2 and args[0] == 'impersonate':"
+p158
+sI1937
+S'                return getattr(self, args[0])(request.args[1])'
+p159
+sI1938
+S'            else:'
+p160
+sI1939
+S'                return getattr(self, args[0])()'
+p161
+sI1940
+S"        elif args[0] == 'cas' and not self.settings.cas_provider:"
+p162
+sI1941
+S"            if args(1) == self.settings.cas_actions['login']:"
+p163
+sI1942
+S'                return self.cas_login(version=2)'
+p164
+sI1943
+S"            elif args(1) == self.settings.cas_actions['validate']:"
+p165
+ssg87
+S'(self=<gluon.tools.Auth object>)'
+p166
+sg89
+S'__call__'
+p167
+sa(dp168
+g66
+S'/Users/master1/Capstone/web2py/gluon/tools.py'
+p169
+sg68
+(dp170
+S'self'
+p171
+S'<gluon.tools.Auth object>'
+p172
+sS'hideerror'
+p173
+g109
+sS'self.settings.hideerror'
+p174
+S'False'
+p175
+sS'self.settings'
+p176
+S"<Storage {'verify_email_onaccept': [], 'register...username_next': '/HealthTechLink/default/index'}>"
+p177
+ssg74
+I3362
+sg75
+(dp178
+I3360
+S"                        formname='register',"
+p179
+sI3361
+S'                        onvalidation=onvalidation,'
+p180
+sI3362
+S'                        hideerror=self.settings.hideerror):'
+p181
+sI3363
+S'            description = self.messages.group_description % form.vars'
+p182
+sI3364
+S'            if self.settings.create_user_groups:'
+p183
+sI3365
+S'                group_id = self.add_group('
+p184
+sI3366
+S'                    self.settings.create_user_groups % form.vars, description)'
+p185
+sI3357
+S''
+sI3358
+S'        table_user.registration_key.default = key'
+p186
+sI3359
+S'        if form.accepts(request, session if self.csrf_prevention else None,'
+p187
+ssg87
+S"(self=<gluon.tools.Auth object>, next='/HealthTechLink/default/index', onvalidation=[], onaccept=[], log='User %(id)s Registered')"
+p188
+sg89
+S'register'
+p189
+sa(dp190
+g66
+S'/Users/master1/Capstone/web2py/gluon/sqlhtml.py'
+p191
+sg68
+(dp192
+S'self.vars.id'
+p193
+S'None'
+p194
+sS'fields'
+p195
+S"{'Organization_name': 0, 'email': 'Chaosdemonhu@yahoo.com', 'first_name': 'Adam', 'last_name': 'Kozlowski', 'password': <gluon.validators.LazyCrypt object>, 'registration_id': '', 'registration_key': 'be9275c1-a6fa-4705-85d9-dbf445a90439', 'reset_password_key': ''}"
+p196
+sS'self'
+p197
+S'<gluon.sqlhtml.SQLFORM object>'
+p198
+sS'self.vars'
+p199
+S"<Storage {'first_name': 'Adam', 'last_name': 'Ko...0x1174da850>, 'email': 'Chaosdemonhu@yahoo.com'}>"
+p200
+sS'self.table.insert'
+p201
+S'<bound method Table.insert of <Table auth_user (...ation_key, reset_password_key, registration_id)>>'
+p202
+sS'self.table'
+p203
+S'<Table auth_user (id, first_name, last_name, ema...ration_key, reset_password_key, registration_id)>'
+p204
+ssg74
+I1746
+sg75
+(dp205
+I1741
+S'                    self.vars.id = self.record[self.id_field_name]'
+p206
+sI1742
+S'                    if fields:'
+p207
+sI1743
+S'                        self.table._db(self.table._id == self.record['
+p208
+sI1744
+S'                                       self.id_field_name]).update(**fields)'
+p209
+sI1745
+S'                else:'
+p210
+sI1746
+S'                    self.vars.id = self.table.insert(**fields)'
+p211
+sI1747
+S''
+sI1748
+S'        self.accepted = ret'
+p212
+sI1749
+S'        return ret'
+p213
+sI1750
+S''
+ssg87
+S"(self=<gluon.sqlhtml.SQLFORM object>, request_vars=<Storage {'first_name': 'Adam', 'last_name': 'Ko...password': 'Ad1993am$', '_formname': 'register'}>, session=<Storage {'last_query': 'db.auth_user.id>0', '_f...gin]': ['2b56aa79-159c-463f-9a0f-139879fff8aa']}>, formname='register', keepvalues=False, onvalidation=[], dbio=True, hideerror=False, detect_record_change=False, **kwargs={})"
+p214
+sg89
+S'accepts'
+p215
+sa(dp216
+g66
+S'/Users/master1/Capstone/web2py/gluon/packages/dal/pydal/objects.py'
+p217
+sg68
+(dp218
+S'self._listify'
+p219
+S'<bound method Table._listify of <Table auth_user...ation_key, reset_password_key, registration_id)>>'
+p220
+sS'fields'
+p221
+S"{'Organization_name': 0, 'email': 'Chaosdemonhu@yahoo.com', 'first_name': 'Adam', 'last_name': 'Kozlowski', 'password': <gluon.validators.LazyCrypt object>, 'registration_id': '', 'registration_key': 'be9275c1-a6fa-4705-85d9-dbf445a90439', 'reset_password_key': ''}"
+p222
+sS'self'
+p223
+S'<Table auth_user (id, first_name, last_name, ema...ration_key, reset_password_key, registration_id)>'
+p224
+sS'ret'
+p225
+g109
+sS'self._db._adapter'
+p226
+S'<pydal.adapters.sqlite.SQLiteAdapter object>'
+p227
+sS'self._db._adapter.insert'
+p228
+S'<bound method SQLiteAdapter.insert of <pydal.adapters.sqlite.SQLiteAdapter object>>'
+p229
+sS'self._db'
+p230
+S'<DAL uri="sqlite://storage.sqlite">'
+p231
+ssg74
+I726
+sg75
+(dp232
+I721
+S'    def insert(self, **fields):'
+p233
+sI722
+S'        fields = self._defaults(fields)'
+p234
+sI723
+S'        self._attempt_upload(fields)'
+p235
+sI724
+S'        if any(f(fields) for f in self._before_insert):'
+p236
+sI725
+S'            return 0'
+p237
+sI726
+S'        ret = self._db._adapter.insert(self, self._listify(fields))'
+p238
+sI727
+S'        if ret and self._after_insert:'
+p239
+sI728
+S'            fields = Row(fields)'
+p240
+sI729
+S'            [f(fields, ret) for f in self._after_insert]'
+p241
+sI730
+S'        return ret'
+p242
+ssg87
+S"(self=<Table auth_user (id, first_name, last_name, ema...ration_key, reset_password_key, registration_id)>, **fields={'Organization_name': 0, 'email': 'Chaosdemonhu@yahoo.com', 'first_name': 'Adam', 'last_name': 'Kozlowski', 'password': <gluon.validators.LazyCrypt object>, 'registration_id': '', 'registration_key': 'be9275c1-a6fa-4705-85d9-dbf445a90439', 'reset_password_key': ''})"
+p243
+sg89
+S'insert'
+p244
+sa(dp245
+g66
+S'/Users/master1/Capstone/web2py/gluon/packages/dal/pydal/adapters/base.py'
+p246
+sg68
+(dp247
+S'e'
+S"IntegrityError('FOREIGN KEY constraint failed',)"
+p248
+ssg74
+I746
+sg75
+(dp249
+I741
+S'            self.execute(query)'
+p250
+sI742
+S'        except Exception:'
+p251
+sI743
+S'            e = sys.exc_info()[1]'
+p252
+sI744
+S"            if hasattr(table,'_on_insert_error'):"
+p253
+sI745
+S'                return table._on_insert_error(table,fields,e)'
+p254
+sI746
+S'            raise e'
+p255
+sI747
+S"        if hasattr(table, '_primarykey'):"
+p256
+sI748
+S'            mydict = dict([(k[0].name, k[1]) for k in fields if k[0].name in table._primarykey])'
+p257
+sI749
+S'            if mydict != {}:'
+p258
+sI750
+S'                return mydict'
+p259
+ssg87
+S"(self=<pydal.adapters.sqlite.SQLiteAdapter object>, table=<Table auth_user (id, first_name, last_name, ema...ration_key, reset_password_key, registration_id)>, fields=[(<pydal.objects.Field object>, 'Adam'), (<pydal.objects.Field object>, 'Kozlowski'), (<pydal.objects.Field object>, ''), (<pydal.objects.Field object>, 0), (<pydal.objects.Field object>, ''), (<pydal.objects.Field object>, <gluon.validators.LazyCrypt object>), (<pydal.objects.Field object>, 'be9275c1-a6fa-4705-85d9-dbf445a90439'), (<pydal.objects.Field object>, 'Chaosdemonhu@yahoo.com')])"
+p260
+sg89
+g244
+sasS'pyver'
+p261
+S'Python 2.7.10: /usr/bin/python (prefix: /System/Library/Frameworks/Python.framework/Versions/2.7)'
+p262
+sS'session'
+p263
+g61
+(S's\x80\x18\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">cart</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">code</td><td style="vertical-align:top;">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">created_by</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">created_on</td><td style="vertical-align:top;">:</td><td><div>2016-04-27 19:27:51</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">description</td><td style="vertical-align:top;">:</td><td><div>Curtosy of the friendly opium den down the street.</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">featured</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">id</td><td style="vertical-align:top;">:</td><td><div>47</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">image</td><td style="vertical-align:top;">:</td><td><div>&lt;ImageName&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_active</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">keywords</td><td style="vertical-align:top;">:</td><td><div>1 Used IVs  0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">modified_by</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">modified_on</td><td style="vertical-align:top;">:</td><td><div>2016-04-27 19:27:51</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">name</td><td style="vertical-align:top;">:</td><td><div>Used IVs</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">on_sale</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">p_Type</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">popularity</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">qty_in_stock</td><td style="vertical-align:top;">:</td><td><div>500</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">quantity_in_cart</td><td style="vertical-align:top;">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">tags</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">tax</td><td style="vertical-align:top;">:</td><td><div>0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">unit_price</td><td style="vertical-align:top;">:</td><td><div>0.99</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">code</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">created_by</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">created_on</td><td style="vertical-align:top;">:</td><td><div>2016-04-27 19:27:51</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">description</td><td style="vertical-align:top;">:</td><td><div>Wonderful machine to help you hyperventilate when you need it most, as in all the time.</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">featured</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">id</td><td style="vertical-align:top;">:</td><td><div>46</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">image</td><td style="vertical-align:top;">:</td><td><div>&lt;ImageName&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_active</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">keywords</td><td style="vertical-align:top;">:</td><td><div>0 The Wonderful Hyperventilation Machine  0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">modified_by</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">modified_on</td><td style="vertical-align:top;">:</td><td><div>2016-04-27 19:27:51</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">name</td><td style="vertical-align:top;">:</td><td><div>The Wonderful Hyperventilation Machine</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">on_sale</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">p_Type</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">popularity</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">qty_in_stock</td><td style="vertical-align:top;">:</td><td><div>2</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">quantity_in_cart</td><td style="vertical-align:top;">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">tags</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">tax</td><td style="vertical-align:top;">:</td><td><div>0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">unit_price</td><td style="vertical-align:top;">:</td><td><div>249.99</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">flash</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_orderby</td><td style="vertical-align:top;">:</td><td><div>db.auth_user.password</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_query</td><td style="vertical-align:top;">:</td><td><div>db.auth_user.id&gt;0</div></td></tr></table></div>'
+tRp264
+sS'etype'
+p265
+S"<class 'sqlite3.IntegrityError'>"
+p266
+sS'date'
+p267
+S'Thu May 19 13:55:39 2016'
+p268
+sS'response'
+p269
+g61
+(S's\xb5\x1c\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">body</td><td style="vertical-align:top;">:</td><td><div>&lt;cStringIO.StringO object at 0x1159be1b8&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">session_id_healthtechlink</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-27b3a7d7-5a05-41fb-ab75-4dde96702613<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div>/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">delimiters</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>{{</div></td></tr><tr><td><div>}}</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">files</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">flash</td><td style="vertical-align:top;">:</td><td><div>please fill out all fields</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">form_label_separator</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">formstyle</td><td style="vertical-align:top;">:</td><td><div>bootstrap3_inline</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generic_patterns</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>*</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">google_analytics_id</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">headers</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">X-Powered-By</td><td style="vertical-align:top;">:</td><td><div>web2py</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">logo</td><td style="vertical-align:top;">:</td><td><div><a class="navbar-brand" href="/HealthTechLink/default/index"><b><span class="flip">3</span><span>Store</span>3</b>&trade;&nbsp;</a></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">menu</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">meta</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">author</td><td style="vertical-align:top;">:</td><td><div>Your Name &lt;you@example.com&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">description</td><td style="vertical-align:top;">:</td><td><div>a cool new app</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generator</td><td style="vertical-align:top;">:</td><td><div>Web2py Web Framework</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">keywords</td><td style="vertical-align:top;">:</td><td><div>web2py, python, framework</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">models_to_run</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>^\\w+\\.py$</div></td></tr><tr><td><div>^default/\\w+\\.py$</div></td></tr><tr><td><div>^default/user/\\w+\\.py$</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">postprocessing</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_client</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_compression_level</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_expires</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_data_name</td><td style="vertical-align:top;">:</td><td><div>session_data_healthtechlink</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_file</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;/Users/master1/Capstone/web2py/applications/HealthTechLink/sessions/0d8/11b/127.0.0.1-27b3a7d7-5a05-41fb-ab75-4dde96702613&#x27;, mode &#x27;rb+&#x27; at 0x116bc6c00&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_filename</td><td style="vertical-align:top;">:</td><td><div>/Users/master1/Capstone/web2py/applications/HealthTechLink/sessions/127.0.0.1-27b3a7d7-5a05-41fb-ab75-4dde96702613</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_hash</td><td style="vertical-align:top;">:</td><td><div>e10aed9b600a9b89f75f3f97e33019da</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-27b3a7d7-5a05-41fb-ab75-4dde96702613</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_name</td><td style="vertical-align:top;">:</td><td><div>session_id_healthtechlink</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_locked</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_masterapp</td><td style="vertical-align:top;">:</td><td><div>HealthTechLink</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_new</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_storage_type</td><td style="vertical-align:top;">:</td><td><div>file</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">status</td><td style="vertical-align:top;">:</td><td><div>200</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">subtitle</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">title</td><td style="vertical-align:top;">:</td><td><div>Healthtechlink</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">view</td><td style="vertical-align:top;">:</td><td><div>default/user.html</div></td></tr></table></div>'
+tRp270
+sS'locals'
+p271
+(dp272
+S'query'
+p273
+S'"INSERT INTO auth_user(first_name,last_name,regis...705-85d9-dbf445a90439\',\'Chaosdemonhu@yahoo.com\');"'
+p274
+sS'self'
+p275
+S'<pydal.adapters.sqlite.SQLiteAdapter object>'
+p276
+sS'e'
+S"IntegrityError('FOREIGN KEY constraint failed',)"
+p277
+sS'fields'
+p278
+S"[(<pydal.objects.Field object>, 'Adam'), (<pydal.objects.Field object>, 'Kozlowski'), (<pydal.objects.Field object>, ''), (<pydal.objects.Field object>, 0), (<pydal.objects.Field object>, ''), (<pydal.objects.Field object>, <gluon.validators.LazyCrypt object>), (<pydal.objects.Field object>, 'be9275c1-a6fa-4705-85d9-dbf445a90439'), (<pydal.objects.Field object>, 'Chaosdemonhu@yahoo.com')]"
+p279
+sS'table'
+p280
+S'<Table auth_user (id, first_name, last_name, ema...ration_key, reset_password_key, registration_id)>'
+p281
+sssS'traceback'
+p282
+S'Traceback (most recent call last):\n  File "/Users/master1/Capstone/web2py/gluon/restricted.py", line 227, in restricted\n    exec ccode in environment\n  File "/Users/master1/Capstone/web2py/applications/HealthTechLink/controllers/default.py", line 156, in <module>\n  File "/Users/master1/Capstone/web2py/gluon/globals.py", line 417, in <lambda>\n    self._caller = lambda f: f()\n  File "/Users/master1/Capstone/web2py/applications/HealthTechLink/controllers/default.py", line 136, in user\n    return dict(form=auth(), formOrg = formOrg)\n  File "/Users/master1/Capstone/web2py/gluon/tools.py", line 1939, in __call__\n    return getattr(self, args[0])()\n  File "/Users/master1/Capstone/web2py/gluon/tools.py", line 3362, in register\n    hideerror=self.settings.hideerror):\n  File "/Users/master1/Capstone/web2py/gluon/sqlhtml.py", line 1746, in accepts\n    self.vars.id = self.table.insert(**fields)\n  File "/Users/master1/Capstone/web2py/gluon/packages/dal/pydal/objects.py", line 726, in insert\n    ret = self._db._adapter.insert(self, self._listify(fields))\n  File "/Users/master1/Capstone/web2py/gluon/packages/dal/pydal/adapters/base.py", line 746, in insert\n    raise e\nIntegrityError: FOREIGN KEY constraint failed\n'
+p283
+s.

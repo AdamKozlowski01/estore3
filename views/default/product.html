@@ -7,7 +7,7 @@
 		<div>
 			<h3>{{=pName}}</h3>
 
-			<img src="images/man.jpg" alt="">
+			<img src="{{=URL('default', 'download', args = [pImage])}}" data-url="{{=URL('download', args = [pImage])}}" alt="" style = "width:280px;height:280px;"/>
 			<p>
 				{{=pDescription}}
 			</p>
@@ -22,7 +22,7 @@
 								<ul>
 									<li>
 										<p>
-											Price: {{=pPrice}}
+											Price: ${{=pPrice}}
 										</p>
 									</li>
 									<li>
@@ -37,12 +37,12 @@
 									</li>
 									<li>
 										<p>
-											Sold By: <a href="{{=(URL('default', 'orgDetails', vars = dict(value = pOrgID)))}}">{{=oName}}</a>
+											Sold By <a href="{{=(URL('default', 'orgDetails', vars = dict(value = pOrgID)))}}">{{=oName}}</a>
 										</p>
 									</li>
 									<li>
 										<p>
-											Rating: TO DO
+											Rating: {{=pAvgRating}}
 										</p>
 									</li>
 								</ul>
@@ -51,5 +51,18 @@
 					</div>
 				</div>
 			</div>
+	<a href="{{=(URL('default', 'postReview', vars = dict(product=pID)))}}">Leave a Review</a>
+	{{for review in reviews:}}
+		<div>
+			{{=review.title}}
+		</div>
+		<div>
+			{{=review.rating}}
+		</div>
+		<div>
+			{{=review.review_text}}
+		</div>
+	{{pass}}
+
 </div>
 {{pass}}

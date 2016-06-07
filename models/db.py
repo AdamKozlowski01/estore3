@@ -67,6 +67,7 @@ db.define_table(
                 auth.settings.table_user_name,
                 Field('first_name', length=128, default=''),
                 Field('last_name', length=128, default=''),
+                Field('job_title', length=128, default=''),
                 Field('email', length=128, default='', unique = True), # required
                 Field('password', 'password', length=512,            # required
                       readable=False, label='Password'),

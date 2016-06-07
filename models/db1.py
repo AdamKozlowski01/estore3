@@ -42,6 +42,7 @@ db.define_table(
     Field('pType_ID'),
     Field('category')
     )
+
 db.define_table(
     'product',
     Field('code',requires=NE),
@@ -57,12 +58,22 @@ db.define_table(
     Field('on_sale','boolean',default=False),
     Field('v_ID', 'reference hospitals'),
     Field('tax','decimal(10,2)'),
+    Field('rating', 'float', default=3),
     Field('keywords',required=True,
           compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
 
 productTable = db['product']
 productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
+
+db.define_table(
+    'review',
+    Field('prodID', 'reference product'),
+    Field('userID', 'reference ' + auth.settings.table_user_name),
+    Field('title', length = 128),
+    Field('rating', requires=IS_IN_SET([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5])),
+    Field('review_text','text')
+    )
 
 db.define_table(
     'purchase_order',
@@ -135,7 +146,7 @@ if db(db.product).count()==0:
             v_ID = l[11]
             tax=0.10,)
 
-        response.generic_patterns = ['*'] if request.is_local else []
+response.generic_patterns = ['*'] if request.is_local else []
 from gluon.tools import Auth, prettydate
 auth = Auth(db, hmac_key = Auth.get_or_create_key())
 auth.define_tables()
