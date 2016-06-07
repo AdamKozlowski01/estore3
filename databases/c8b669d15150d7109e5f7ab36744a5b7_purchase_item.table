@@ -162,7 +162,7 @@ sS'type'
 p46
 S'string'
 p47
-ssS'featured'
+ssS'created_on'
 p48
 (dp49
 g4
@@ -172,7 +172,7 @@ I00
 sg6
 I19
 sg7
-S'CHAR(1)'
+S'TIMESTAMP'
 p50
 sg9
 I00
@@ -194,8 +194,7 @@ p54
 sg9
 I00
 sg10
-S'reference auth_user'
-p54
+g33
 ssS'keywords'
 p55
 (dp56
@@ -335,14 +334,13 @@ sg5
 I00
 sg6
 I20
->>>>>>> Adam
 sg7
-S'DOUBLE'
+S'INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  '
 p83
 sg9
 I00
 sg10
-g33
+g68
 ssS'purchase_order'
 p84
 (dp85
@@ -375,7 +373,7 @@ p90
 sg9
 I00
 sg10
-g80
+g51
 ssS'v_id'
 p91
 (dp92
