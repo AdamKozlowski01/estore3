@@ -8,6 +8,7 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
 
+<<<<<<< HEAD
 def textbox():
     #for names in db(conversations).text_file:
         #strname = names.split()
@@ -123,6 +124,8 @@ def parse_conv(f):
 
 def findConvSql():
     test = []
+=======
+>>>>>>> master
 
 def index():
     return dict()
@@ -259,10 +262,17 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
+<<<<<<< HEAD
     form=auth()
     return dict(form=form)
 
 def RegisterOrganization():
+=======
+    form=auth()            
+    return dict(form=form)
+
+def registerOrg():
+>>>>>>> master
 
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:

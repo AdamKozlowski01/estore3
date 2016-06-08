@@ -1,0 +1,62 @@
+.thumbnail {
+   height: 100px;
+}
+.shopping-cart {
+   display: none;
+   padding: 10px;
+   border-top: 5px solid #0070B2;
+   border-bottom: 5px solid #0070B2;
+   position: absolute;
+   left: 0px;
+}
+.to-cart {
+   width:50px;
+   cursor: pointer;
+}
+.navbar, .inverse-navbar {
+   background: #0070B2 !important;
+   border-color: white;
+}
+.navbar-inverse .navbar-brand, .navbar-inverse .navbar-nav>li>a {
+   color: white;
+}
+.navbar-inverse .navbar-brand:hover {
+   color: #FF9506;
+}
+.shopping-cart table {
+   max-width: 0px;
+}
+.flip {
+  display: inline-block;
+  -moz-transform: scaleX(-1);    /* Gecko */
+  -o-transform: scaleX(-1);      /* Operah */
+  -webkit-transform: scaleX(-1); /* webkit */
+  transform: scaleX(-1);         /* standard */
+  filter: FlipH;                 /* IE 6/7/8 */
+}
+.btn-primary {
+  background: #0070B2;
+  border: 0;
+}
+.btn-primary:hover {
+  background: #FF9506;
+}
+.reply-area {
+    position: absolute;
+    bottom: 0px;
+}
+.reply-area textarea{
+    width: 300px;
+    height: 50px;
+    left: 0px;
+}
+.reply-area submit_button{
+    position: absolute;
+    left: 500px;
+}
+.right-sidebar .navbar-inverse{
+    bottom: 0px;
+    left: 1139px;
+    width: 300px;
+    height: 818px;
+}

@@ -21,9 +21,7 @@ response.google_analytics_id = None
 
 response.menu = []
 if auth.user:
-    response.menu.append(('My Orders',None,URL('default','my_orders')))
-    if auth.user.id==1 and not 'manager' in auth.user_groups.values():
-        auth.add_membership(auth.add_group('manager'))
-    if 'manager' in auth.user_groups.values():
-        response.menu.append(('Manage Products',None,URL('default','manage_products')))
-        response.menu.append(('Manage Orders',None,URL('default','manage_orders')))
+    if 'OrgAdmin' in auth.user_groups.values():
+        response.menu.append(('Upload Product',None,URL('default','uploadProduct')))
+        response.menu.append(('Manage Products',None,URL('default','manageProducts')))
+

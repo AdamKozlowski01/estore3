@@ -1,0 +1,64 @@
+<!-- Main ========================================= -->
+    <!-- Begin page content -->
+    <div class="container-fluid main-container">
+      {{if left_sidebar_enabled:}}
+        <div class="col-md-3 left-sidebar">
+            {{block left_sidebar}}
+            <h3>Left Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+      {{pass}}
+
+      <div class="{{=middle_column}}">
+        {{block center}}
+        {{include}}
+        {{end}}
+      </div>
+
+      {{if right_sidebar_enabled:}}
+        <div class="col-md-3">
+            {{block right_sidebar}}
+            <h3>Right Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+      {{pass}}
+
+    </div>
+
+    {{block ads}}{{end}}
+
+    <title>Something</title>
+    <style>
+        #scrolly{
+            width: 1200px;
+            height: 250px;
+            overflow: auto;
+            overflow-y: hidden;
+            margin: 0 auto;
+            white-space: nowrap;
+            position: relative;
+            margin-top: 15%;
+            left: 50%;
+            margin-right: -10%;
+            transform: translate(-50%, -50%);
+        }
+        #scrolly img{
+            width: 200px;
+            height: 200px;
+            margin: 20px 10px;
+            display: inline;   
+        }
+    </style>
+    <body>
+        <div id='scrolly'>
+            {{products = db(db.product.featured == bool(True)).select()}}
+            {{for product in products:}}
+                {{print product.image}}
+
+                <img scr = "{{=URL('static', 'images/product.image')}}"></img>
+                <!--<p><h4><a href = "{{=URL('default', 'product', vars=dict(value=product.id))}}">{{=product.name}}</a></h4></p>-->
+            {{pass}}
+        </div>
+    </body>

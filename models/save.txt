@@ -1,0 +1,4 @@
+0|The Wonderful Hyperventilation Machine|Wonderful machine to help you hyperventilate when you need it most, as in all the time.|2|249.99|<ImageName>||0|0|0|||
+1|Used IVs|Curtosy of the friendly opium den down the street.|500|0.99|<ImageName>||0|0|0|||
+2|Vibra-Finger|"Professional Gum Massager".\n Safe and sanitary the lovely vibra-finger promotes circulation, stimulates oral tissues, and prevents tooth loss.|20|99.99|<ImageName>||0|0|0||| 
+3|Rectal Dilators|Is your anus feeling really tight? Need to get ready for that big night with the boyfriend? Never fear, rectal dilators are here! Please wash between uses.|200|10.99|<imageName>||0|0|0|||

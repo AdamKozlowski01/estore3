@@ -1,0 +1,10 @@
+
+{{extend 'layout.html'}}
+    {{block 'scrollBar.html'}}
+
+<h2>User Details</h2>
+<p>{{= pFirstName}} </p>
+<p>{{=pLastName}}</p>
+<p>{{=pPosition}}</p><p>
+ <a href="{{=(URL('default', 'orgDetails', vars = dict(value = oID)))}}">{{=oName}}</a>
+</p>
