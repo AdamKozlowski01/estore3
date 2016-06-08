@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # this file is released under public domain and you can use without limitations
 
+
 #########################################################################
 ## This is a sample controller
 ## - index is the default action of any application
@@ -18,9 +19,14 @@ def textbox():
     return dict(form=form, messages=messages)
 
 def index():
+    session.products = []
     return dict()
 
+def about():
+    return locals()
+
 def search():
+   
     keywords = request.vars.keywords.split() if request.vars.keywords else []
     price = request.vars.price
     page = int(request.vars.page or 0)
@@ -34,6 +40,8 @@ def search():
     else: query = reduce(lambda a,b: a&b, queries)    
     return db(query).select(limitby=(page*100,page*100+100), orderby=~db.product.rating).as_json()
 
+def emptyCart():
+    session.cart = []
 def submit_order():
     import json
     session.cart = json.loads(request.vars.cart)
@@ -43,9 +51,9 @@ def postRating():
     prod_id = request.vars.product
     avg = db.review.rating.avg()
     row = db(db.review.prodID == prod_id).select(avg).first()
-    product = db(db.product.id == prod_id)
-    product.update(rating = row[avg])
-    print row[avg]
+    product = db(db.product.id == prod_id).select().first()
+    product.rating = row[avg]
+    product.update_record()
     redirect(URL('default', 'product', vars = dict(value = prod_id)))
 
 @auth.requires_login()
@@ -112,7 +120,6 @@ def product():
         oName = org[0]['h_Name']
         pPrice = prod[0]['unit_price']
         pStock = prod[0]['qty_in_stock']
-
         reviews = db(db.review.prodID == pID).select()
 
     return locals()
@@ -134,10 +141,9 @@ def userDetails():
         pFirstName = user[0]['first_name']
         pLastName = user[0]['last_name']
         pPosition = user[0]['job_title']
-        pOrganizationID = user[0]['Organization_id']
-        org = db(db.hospitals.id == pOrganizationID).select()
+        oID = user[0]['Organization_id']
+        org = db(db.hospitals.id == oID).select()
         oName = org[0]['h_Name']
-        oID = org[0]['id']
     return locals()
     
 
@@ -182,7 +188,6 @@ def user():
     return dict(form=form)
 
 def RegisterOrganization():
-
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:
         response.flash = 'form accepted'
@@ -191,7 +196,7 @@ def RegisterOrganization():
     elif formOrg.errors:
         response.flash = 'form has errors'
 
-    return dict(formOrg = formOrg)
+    return dict(form = formOrg)
 
 @auth.requires_login()
 def orgAdmin():
@@ -199,7 +204,7 @@ def orgAdmin():
     if the user is logged in check to see if they should be the admin
     """
     me = auth.user_id
-    orgAdminID = 3 #retrieved from auth_group
+    orgAdminID = db(auth.settings.table_group.role == "OrgAdmin").select().first().id
     user = db(auth.settings.table_user.id == me).select()
     if user[0] is not None:
         org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)
@@ -211,15 +216,6 @@ def orgAdmin():
 
 @auth.requires_login()
 def postReview():
-
-
-    #prod_id = request.vars.product
-    #vote = db.vote(prod_id, created_by=auth.user.id)
-    #if vote:  vote.update_record(rating = request.vars.rating)
-    #else:     db.vote.insert(prodID = prod_id, rating = request.vars.rating)
-    #avg = db.vote.rating.avg()
-    #row = db(db.vote.prodID == prod_id).select(avg).first()
-    #db(db.product.id == prod_id).update(rating = row[avg])
     me = auth.user_id
     pID = request.get_vars.product
     rows = db(db.product.id == pID).select()
@@ -240,28 +236,75 @@ def postReview():
 
 @auth.requires_membership('OrgAdmin')
 def manageProducts():
+    #shows a table of products based on the membership
     me = auth.user_id
     user = db(auth.settings.table_user.id == me).select()
     products = db(db.product.v_ID == user[0].Organization_id).select(db.product.ALL)
-
-    #products = products.as_dict()
-    return products.as_dict()
+    return dict(products=products)
 
 @auth.requires_membership('OrgAdmin')
 def uploadProduct():
+    '''
+    add new product code base skeleton
+    works, sends to new html page with forms to add new product
+    need to remove the option to manually change the v_id
+    v_idneeds to the be OrdAdmin id(thing)
+    '''
     form = SQLFORM(db.product)
-    #Needs to handle adding the product to the database
-    return dict(form = form);
+    form.vars.v_ID = auth.user.Organization_id
+    #make form.vars.v_ID unchangeable
+    if form.process().accepted :
+        response.flash = 'new product added'
+        redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'There are errors in the form. Please correct errors before continuing.'
+
+    return dict(form = form)
+	
+def productCompare():
+    '''
+    Compares two or more products side by side.
+    '''
+    productsCompare = session.products
+    return dict(products = productsCompare)
+
+def addProductToSession():
+    product = db(db.products.id == request.get_vars.product).select().first()
+    if product not in session.products:
+        session.products.append(product)
+    redirect(session.prevURL) #return to last page
+def removeProductFromSession():
+    product = db(db.products.id == request.get_vars.product).select().first()
+    if product in session.products:
+        session.products.remove(product)
+    redirect(session.prevURL) #return to last page
 
 @auth.requires_membership('OrgAdmin')
 def editProduct():
-    record = db.product(request.args(0))
-    form = SQLFORM(db.product, record)
+    '''
+    add a way to show the existing product info to the text fields
+    as of right now it reditects to tedit page which is a new form...
+    '''
+    record = db(db.product.id == request.get_vars.value).select()
+    form = SQLFORM(db.product,record[0])
     if form.process().accepted:
-        #needs to handle updating products in the db
+        response.flash = 'form accepted'
         redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'form has errors'
     return dict(form=form)
 
+@auth.requires_membership('OrgAdmin')
+def deactivateProduct():
+    '''
+    sets is_active to false, updates db 
+    then redirects to manageProducts page again
+    '''
+    record = db(db.product.id == request.get_vars.value).select().first()
+    record.is_active=False
+    record.update_record()
+
+    redirect(URL('manageProducts'))
 
 @cache.action()
 def download():
