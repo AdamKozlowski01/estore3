@@ -33,25 +33,31 @@
     <style>
         #scrolly{
             width: 1200px;
-            height: 300px;
+            height: 250px;
             overflow: auto;
             overflow-y: hidden;
-            margin: 30 auto;
-            white-space: nowrap
+            margin: 0 auto;
+            white-space: nowrap;
+            position: relative;
+            margin-top: 15%;
+            left: 50%;
+            margin-right: -10%;
+            transform: translate(-50%, -50%);
         }
         #scrolly img{
             width: 200px;
             height: 200px;
             margin: 20px 10px;
-            display: inline;
+            display: inline;   
         }
     </style>
-    </head>
     <body>
         <div id='scrolly'>
             {{products = db(db.product.featured == bool(True)).select()}}
             {{for product in products:}}
-                <img scr = "{{=URL('default', 'download', args = ['product.image'])}}"></img>
+                {{print product.image}}
+
+                <img scr = "{{=URL('static', 'images/product.image')}}"></img>
                 <!--<p><h4><a href = "{{=URL('default', 'product', vars=dict(value=product.id))}}">{{=product.name}}</a></h4></p>-->
             {{pass}}
         </div>
