@@ -1,8 +1,4 @@
 <!DOCTYPE html>
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/Vince
 <!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js" lang="{{=T.accepted_language or 'en'}}"> <!--<![endif]-->
   <head>
     <meta charset="utf-8">
@@ -67,7 +63,6 @@
           {{=response.logo or ''}}
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
-<<<<<<< HEAD
           <ul class="nav navbar-nav navbar-right">
             {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
             
@@ -83,32 +78,6 @@
     {{block header}}
     {{end}}
     <!-- Main ========================================= -->
-=======
-          
-          <ul class="nav navbar-nav navbar-right">
-            {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
-              <ul class = "nav navbar-nav">
-              <li class= "web2py-menu-first">
-                 <a href = "{{=URL('default','RegisterOrganization')}}">Register Organization</a>
-              </li>
-            </ul>
-
-              <ul class = "nav navbar-nav">
-              <li class= "web2py-menu-first">
-                 <a href = "{{=URL('default','userDetails',vars=dict(value=2))}}">User Details</a>
-              </li>
-            </ul>
-          </ul>
-          {{if response.menu:}}
-            {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
-                {{pass}}
-            {{pass}}
-
-          </div>
-      </div>
-    </nav>
-          <!-- Main ========================================= -->
->>>>>>> origin/Vince
     <!-- Begin page content -->
     <div class="container-fluid main-container">
       {{if left_sidebar_enabled:}}
@@ -134,20 +103,10 @@
             {{end}}
         </div>
       {{pass}}
-<<<<<<< HEAD
 
     </div>
 
     {{block ads}}{{end}}
-=======
-      
-    </div>
-      {{include 'scrollBar'}}
-    {{block ads}}{{end}}
-    <!-- Masthead ===================================== -->    
-    {{block header}}
-    {{end}}
->>>>>>> origin/Vince
 
     <!--{{block footer}} <! this is default footer ->      
     <footer class="footer">

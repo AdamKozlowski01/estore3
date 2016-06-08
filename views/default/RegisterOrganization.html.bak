@@ -1,5 +1,0 @@
-{{extend 'layout.html'}}
-{{block 'scrollBar.html'}}
-
-<h2>Register Organization</h2>
-{{=formOrg}}
