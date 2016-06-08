@@ -1,0 +1,795 @@
+(dp1
+S'output'
+p2
+S"<type 'exceptions.SyntaxError'> unable to compute field: keywords"
+p3
+sS'layer'
+p4
+S'D:\\Desktop\\web2py\\applications\\estore3Master\\controllers/default.py'
+p5
+sS'code'
+p6
+S'# -*- coding: utf-8 -*-\n# this file is released under public domain and you can use without limitations\n\n#########################################################################\n## This is a sample controller\n## - index is the default action of any application\n## - user is required for authentication and authorization\n## - download is for downloading files uploaded in the db (does streaming)\n#########################################################################\n\n\ndef textbox():\n    form = SQLFORM(Post, formstyle=\'divs\',labels=None,submit_button=\'Send\',showid=False)\n    if form.process().accepted:\n        #js = "jQuery(\'.new\').slideDown(\'slow\')"\n        #comet_send(\'http://127.0.0.1:8888\', js, \'mykey\', \'mygroup\')\n        pass\n    messages = db(Post).select(orderby=~Post.created_on)\n    return dict(form=form, messages=messages)\n\ndef index():\n    return dict()\n\ndef search():\n    keywords = request.vars.keywords.split() if request.vars.keywords else []\n    price = request.vars.price\n    page = int(request.vars.page or 0)\n    queries = []\n    if keywords:\n        queries.append(reduce(lambda a,b:a&b,\n                              [db.product.keywords.contains(k) for k in keywords]))\n    if price:\n        queries.append(db.product.unit_price<=float(price))\n    if not queries: query = db.product\n    else: query = reduce(lambda a,b: a&b, queries)    \n    return db(query).select(limitby=(page*100,page*100+100), orderby=~db.product.rating).as_json()\n\ndef submit_order():\n    import json\n    session.cart = json.loads(request.vars.cart)\n    return \'ok\'\n\ndef postRating():\n    prod_id = request.vars.product\n    avg = db.review.rating.avg()\n    row = db(db.review.prodID == prod_id).select(avg).first()\n    product = db(db.product.id == prod_id).select().first()\n    product.rating = row[avg]\n    product.update_record()\n    redirect(URL(\'default\', \'product\', vars = dict(value = prod_id)))\n\n@auth.requires_login()\ndef order_info():\n    if not session.cart:\n        redirect(URL(\'index\'))\n    db.purchase_order.buyer_name.default = \'%(first_name)s %(last_name)s\' % auth.user\n    form = SQLFORM(db.purchase_order).process()\n    if form.accepted:\n        total_balance = 0\n        for item in session.cart:\n            item[\'product\'] = item[\'id\']\n            item[\'purchase_order\'] = form.vars.id\n            del item[\'id\']\n            db.purchase_item.insert(**item)\n            total_balance += item[\'unit_price\']*int(item[\'quantity_in_cart\'])\n        session.cart = None\n        db(db.purchase_order.id==form.vars.id).update(total_balance=total_balance)\n        redirect(URL(\'pay\',args=form.vars.id, hmac_key=STRIPE_SECRET_KEY))\n    return dict(form=form)\n\ndef pay():\n    if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):\n        redirect(URL(\'index\'))\n    from gluon.contrib.stripe import StripeForm\n    response.flash = None # never show a response.flash\n    order = db.purchase_order(request.args(0,cast=int))\n    if not order or order.amount_paid:\n        session.flash = \'you paid already!\'\n        redirect(URL(\'index\'))\n    amount = order.total_balance\n    description ="..."\n    form = StripeForm(\n        pk=STRIPE_PUBLISHABLE_KEY,\n        sk=STRIPE_SECRET_KEY,\n        amount=int(100*amount),\n        description=description).process()\n    if form.accepted:\n        code = \'[%s/%s]\' % (order.id,form.response[\'id\'])\n        auth.settings.mailer.send(\n            to=auth.user.email,\n            subject=\'...\',\n            message=\'Your payment of $%.2f has been processed %s\' % (\n                amount, code))\n        order.update_record(total_balance=0,amount_paid=amount,\n                            payment_id=form.response[\'id\'],\n                            paid_on=request.now)\n        redirect(URL(\'thank_you\', vars=dict(code=code), hmac_key=STRIPE_SECRET_KEY))\n    elif form.errors:\n        redirect(URL(\'pay_error\'))\n    return dict(form=form)\n\ndef product():\n    pID = request.get_vars.value\n    prod = db(db.product.id == pID).select()\n    if prod[0] is not None:\n        pName = prod[0][\'name\']\n        pDescription = prod[0][\'description\']\n        pImage = prod[0][\'image\']\n        pAvgRating = prod[0][\'rating\']\n        pType = prod[0][\'category\']\n        pOrgID = prod[0][\'v_ID\']\n        org = db(db.hospitals.id == pOrgID).select()\n        oName = org[0][\'h_Name\']\n        pPrice = prod[0][\'unit_price\']\n        pStock = prod[0][\'qty_in_stock\']\n        reviews = db(db.review.prodID == pID).select()\n\n    return locals()\n\ndef orgDetails():\n    org = db(db.hospitals.id == request.get_vars.value).select()\n    if org[0] is not None:\n        oName = org[0][\'h_Name\']\n        oSize = org[0][\'h_size\']\n        oForProfit = org[0][\'for_Profit\']\n        oContactEmail = org[0][\'contact_Email\']\n        oEmployees = db(auth.settings.table_user.Organization_id == request.get_vars.value).select()\n\n    return locals()\n\ndef userDetails():\n    user = db(db.auth.settings.table_user == request.get_vars.value).select()\n    if user[0] is not None:\n        pFirstName = user[0][\'first_name\']\n        pLastName = user[0][\'last_name\']\n        pPosition = user[0][\'job_title\']\n        pOrganizationID = user[0][\'Organization_id\']\n        org = db(db.hospitals.id == pOrganizationID).select()\n        oName = org[0][\'h_Name\']\n    return locals()\n    \n\ndef thank_you():\n    if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):\n        redirect(URL(\'index\'))\n    return locals()\n\ndef pay_error():\n    return locals()\n\n@auth.requires_membership(\'manager\')\ndef my_orders():\n    db.purchase_order._common_filter = lambda query: query&(db.purchase_order.created_by==auth.user.id)\n    return dict(grid=SQLFORM.smartgrid(db.purchase_order,create=False,editable=False,deletable=False,csv=False))\n\n@auth.requires_membership(\'manager\')\ndef manage_products():\n    return dict(grid=SQLFORM.grid(db.product))\n\n@auth.requires_membership(\'manager\')\ndef manage_orders():\n    return dict(grid=SQLFORM.smartgrid(db.purchase_order))\n\ndef user():\n    """\n    exposes:\n    http://..../[app]/default/user/login\n    http://..../[app]/default/user/logout\n    http://..../[app]/default/user/register\n    http://..../[app]/default/user/profile\n    http://..../[app]/default/user/retrieve_password\n    http://..../[app]/default/user/change_password\n    http://..../[app]/default/user/manage_users (requires membership in\n    http://..../[app]/default/user/bulk_register\n    use @auth.requires_login()\n        @auth.requires_membership(\'group name\')\n        @auth.requires_permission(\'read\',\'table name\',record_id)\n    to decorate functions that need access control\n    """\n    form=auth()            \n    return dict(form=form)\n\ndef RegisterOrganization():\n\n    formOrg = SQLFORM(db.hospitals)\n    if formOrg.process().accepted:\n        response.flash = \'form accepted\'\n        #check to see if this user needs to have highest privledges\n        redirect(URL(\'user/register\'))\n    elif formOrg.errors:\n        response.flash = \'form has errors\'\n\n    return dict(form = formOrg)\n\n@auth.requires_login()\ndef orgAdmin():\n    """\n    if the user is logged in check to see if they should be the admin\n    """\n    me = auth.user_id\n    orgAdminID = auth.settings.table_group #retrieved from auth_group\n    user = db(auth.settings.table_user.id == me).select()\n    if user[0] is not None:\n        org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)\n        if org[0].contact_Email is not None:\n            db.auth_membership.insert(user_id = me, group_id = orgAdminID)\n            redirect(URL(\'index\'))\n            response.flash = "You are an OrgAdmin now, congratulations!"\n    return locals()\n\n@auth.requires_login()\ndef postReview():\n\n\n    #prod_id = request.vars.product\n    #vote = db.vote(prod_id, created_by=auth.user.id)\n    #if vote:  vote.update_record(rating = request.vars.rating)\n    #else:     db.vote.insert(prodID = prod_id, rating = request.vars.rating)\n    #avg = db.vote.rating.avg()\n    #row = db(db.vote.prodID == prod_id).select(avg).first()\n    #db(db.product.id == prod_id).update(rating = row[avg])\n    me = auth.user_id\n    pID = request.get_vars.product\n    rows = db(db.product.id == pID).select()\n    product = rows[0]\n    pName = product.name\n    pRating = product.rating\n    #change to SQL form and remove prodID and UserID\n    #form = FORM(\'Title:\', INPUT(title=\'title\'), \'Review:\', INPUT(review = \'review\'), INPUT(_type=\'submit\'))\n    form = SQLFORM(db.review, fields = [\'title\', \'rating\',\'review_text\'], labels = {\'title\': \'Title your Review\',\\\n     \'review_text\': \'Give others your thoughts\'}, formstyle = \'bootstrap3_stacked\')\n    form.vars.prodID = pID\n    form.vars.userID = me\n    if form.process().accepted:\n        redirect(URL(\'default\', \'postRating\', vars=dict(product=pID, rating = form.vars.rating)))\n        response.flash = "Form accepted"\n\n    return locals()\n\n@auth.requires_membership(\'OrgAdmin\')\ndef manageProducts():\n    #shows a table of products based on the membership\n    me = auth.user_id\n    user = db(auth.settings.table_user.id == me).select()\n    products = db(db.product.v_ID == user[0].Organization_id).select(db.product.ALL)\n    return dict(products=products)\n\n@auth.requires_membership(\'OrgAdmin\')\ndef uploadProduct():\n    \'\'\'\n    add new product code base skeleton\n    works, sends to new html page with forms to add new product\n    need to remove the option to manually change the v_id\n    v_idneeds to the be OrdAdmin id(thing)\n    \'\'\'\n    form = SQLFORM(db.product)\n#    while db.product.v_ID != auth.user.Organization_id:\n#        response.flash = \'Please enter the correct Vendor/Organization\'\n#            redirect(URL(\'manageProducts\'))\n    if db.product.v_ID != auth.user.Organization_id:\n        db(db.product.id==form.vars.id).delete()\n        redirect(URL(\'manageProducts\'))\n    elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:\n        response.flash = \'new product added\'\n        redirect(URL(\'manageProducts\'))\n#    elif db.product.v_ID != auth.user.Organization_id:\n#        response.flash = \'Please enter the correct Vendor/Organization\'\n    elif form.errors:\n        response.flash = \'There are errors in the form. Please correct errors before continuing.\'\n    return dict(form = form);\n\n@auth.requires_membership(\'OrgAdmin\')\ndef editProduct():\n    \'\'\'\n    add a way to show the existing product info to the text fields\n    as of right now it reditects to tedit page which is a new form...\n    \'\'\'\n    record = db(db.product.id == request.get_vars.value).select()\n    form = SQLFORM(db.product,record[0])\n    if form.process().accepted:\n        response.flash = \'form accepted\'\n        redirect(URL(\'manageProducts\'))\n    elif form.errors:\n        response.flash = \'form has errors\'\n    return dict(form=form)\n\n@auth.requires_membership(\'OrgAdmin\')\ndef deactivateProduct():\n    \'\'\'\n    sets is_active to false, updates db \n    then redirects to manageProducts page again\n    \'\'\'\n    record = db(db.product.id == request.get_vars.value).select().first()\n    record.is_active=False\n    record.update_record()\n\n    redirect(URL(\'manageProducts\'))\n\n@cache.action()\ndef download():\n    """\n    allows downloading of uploaded files\n    http://..../[app]/default/download/[filename]\n    """\n    return response.download(request, db)\n\n\ndef call():\n    """\n    exposes services. for example:\n    http://..../[app]/default/call/jsonrpc\n    decorate with @services.jsonrpc the functions to expose\n    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv\n    """\n    return service()\n\nresponse._vars=response._caller(uploadProduct)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+S'exception'
+p10
+(dp11
+S'__getslice__'
+p12
+S"<method-wrapper '__getslice__' of exceptions.SyntaxError object>"
+p13
+sS'text'
+p14
+S'None'
+p15
+sS'__str__'
+p16
+S"<method-wrapper '__str__' of exceptions.SyntaxError object>"
+p17
+sS'__reduce__'
+p18
+S'<built-in method __reduce__ of exceptions.SyntaxError object>'
+p19
+sS'__dict__'
+p20
+S'{}'
+p21
+sS'__sizeof__'
+p22
+S'<built-in method __sizeof__ of exceptions.SyntaxError object>'
+p23
+sS'__init__'
+p24
+S"<method-wrapper '__init__' of exceptions.SyntaxError object>"
+p25
+sS'__setattr__'
+p26
+S"<method-wrapper '__setattr__' of exceptions.SyntaxError object>"
+p27
+sS'__reduce_ex__'
+p28
+S'<built-in method __reduce_ex__ of exceptions.SyntaxError object>'
+p29
+sS'__new__'
+p30
+S'<built-in method __new__ of type object>'
+p31
+sS'__format__'
+p32
+S'<built-in method __format__ of exceptions.SyntaxError object>'
+p33
+sS'__class__'
+p34
+S"<type 'exceptions.SyntaxError'>"
+p35
+sS'filename'
+p36
+S'None'
+p37
+sS'lineno'
+p38
+S'None'
+p39
+sS'msg'
+p40
+S"'unable to compute field: keywords'"
+p41
+sS'__doc__'
+p42
+S"'Invalid syntax.'"
+p43
+sS'__getitem__'
+p44
+S"<method-wrapper '__getitem__' of exceptions.SyntaxError object>"
+p45
+sS'__setstate__'
+p46
+S'<built-in method __setstate__ of exceptions.SyntaxError object>'
+p47
+sS'__getattribute__'
+p48
+S"<method-wrapper '__getattribute__' of exceptions.SyntaxError object>"
+p49
+sS'print_file_and_line'
+p50
+S'None'
+p51
+sS'args'
+p52
+S"('unable to compute field: keywords',)"
+p53
+sS'__subclasshook__'
+p54
+S'<built-in method __subclasshook__ of type object>'
+p55
+sS'offset'
+p56
+S'None'
+p57
+sS'__unicode__'
+p58
+S'<built-in method __unicode__ of exceptions.SyntaxError object>'
+p59
+sS'__delattr__'
+p60
+S"<method-wrapper '__delattr__' of exceptions.SyntaxError object>"
+p61
+sS'__repr__'
+p62
+S"<method-wrapper '__repr__' of exceptions.SyntaxError object>"
+p63
+sS'__hash__'
+p64
+S"<method-wrapper '__hash__' of exceptions.SyntaxError object>"
+p65
+ssS'evalue'
+p66
+S'unable to compute field: keywords'
+p67
+sS'request'
+p68
+cgluon.html
+XML_unpickle
+p69
+(S's\xbcb\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">ajax</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">application</td><td style="vertical-align:top;">:</td><td><div>estore3Master</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cid</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">client</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">controller</td><td style="vertical-align:top;">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">session_id_admin</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-1059e7fb-912b-438c-b6bf-ed6946ffec5f<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_estore3</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-451706a7-ef93-4807-ad9a-78658e99ae7d<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_estore3master</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-a7a3048a-a936-4a6a-b922-54f31f16e545<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_welcome</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-4cf53fed-59fc-45b0-967c-f3cf5c2291f7<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">env</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT</td><td style="vertical-align:top;">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT_ENCODING</td><td style="vertical-align:top;">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT_LANGUAGE</td><td style="vertical-align:top;">:</td><td><div>en-US,en;q=0.5</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONNECTION</td><td style="vertical-align:top;">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_COOKIE</td><td style="vertical-align:top;">:</td><td><div>session_id_welcome=127.0.0.1-4cf53fed-59fc-45b0-967c-f3cf5c2291f7; session_id_admin=127.0.0.1-1059e7fb-912b-438c-b6bf-ed6946ffec5f; session_id_estore3master=127.0.0.1-a7a3048a-a936-4a6a-b922-54f31f16e545; session_id_estore3=127.0.0.1-451706a7-ef93-4807-ad9a-78658e99ae7d</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_HOST</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_REFERER</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000/estore3Master/default/manageProducts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_USER_AGENT</td><td style="vertical-align:top;">:</td><td><div>Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">PATH_INFO</td><td style="vertical-align:top;">:</td><td><div>/estore3Master/default/uploadProduct</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">QUERY_STRING</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_ADDR</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_PORT</td><td style="vertical-align:top;">:</td><td><div>3943</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REQUEST_METHOD</td><td style="vertical-align:top;">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SCRIPT_NAME</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_NAME</td><td style="vertical-align:top;">:</td><td><div>BLACKVENOM</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PORT</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PROTOCOL</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_SOFTWARE</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\admin\\\\&#x27;, &#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\welcome\\\\&#x27;, &#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\estore3Master\\\\&#x27;, &#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\estore3\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>D:\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x2f97198: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;BLACKVENOM&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;port&#x27;: 8000, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;D:\\\\Desktop\\\\web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;******&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>D:\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept</td><td style="vertical-align:top;">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept_encoding</td><td style="vertical-align:top;">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept_language</td><td style="vertical-align:top;">:</td><td><div>en-US,en;q=0.5</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_connection</td><td style="vertical-align:top;">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_cookie</td><td style="vertical-align:top;">:</td><td><div>session_id_welcome=127.0.0.1-4cf53fed-59fc-45b0-967c-f3cf5c2291f7; session_id_admin=127.0.0.1-1059e7fb-912b-438c-b6bf-ed6946ffec5f; session_id_estore3master=127.0.0.1-a7a3048a-a936-4a6a-b922-54f31f16e545; session_id_estore3=127.0.0.1-451706a7-ef93-4807-ad9a-78658e99ae7d</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_host</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_referer</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000/estore3Master/default/manageProducts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_user_agent</td><td style="vertical-align:top;">:</td><td><div>Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>fe80::8dcf:63a1:96ea:3c29%16</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>2601:246:180:808:8dcf:63a1:96ea:3c29</div></td></tr><tr><td><div>2601:246:180:808:711b:c1d3:9c93:c2f5</div></td></tr><tr><td><div>fe80::49d:83c:e7f3:3d80%12</div></td></tr><tr><td><div>2001:0:5ef5:79fd:49d:83c:e7f3:3d80</div></td></tr><tr><td><div>BLACKVENOM</div></td></tr><tr><td><div>192.168.56.1</div></td></tr><tr><td><div>192.168.1.149</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>fe80::c50f:a383:2fff:4eec%8</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path_info</td><td style="vertical-align:top;">:</td><td><div>/estore3Master/default/uploadProduct</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">query_string</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_addr</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_port</td><td style="vertical-align:top;">:</td><td><div>3943</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_method</td><td style="vertical-align:top;">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_uri</td><td style="vertical-align:top;">:</td><td><div>/estore3Master/default/uploadProduct</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">script_name</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_name</td><td style="vertical-align:top;">:</td><td><div>BLACKVENOM</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_port</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_protocol</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_software</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_path</td><td style="vertical-align:top;">:</td><td><div>D:\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.14.6-stable+timestamp.2016.05.10.00.21.47</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x021DD0D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x02E877D8&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x0810C1B0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x021DD0D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x02E877D8&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x0810C1B0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">extension</td><td style="vertical-align:top;">:</td><td><div>html</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">folder</td><td style="vertical-align:top;">:</td><td><div>D:\\Desktop\\web2py\\applications\\estore3Master\\</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">function</td><td style="vertical-align:top;">:</td><td><div>uploadProduct</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">global_settings</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\admin\\\\&#x27;, &#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\welcome\\\\&#x27;, &#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\estore3Master\\\\&#x27;, &#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\estore3\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>D:\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x2f97198: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;BLACKVENOM&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;port&#x27;: 8000, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;D:\\\\Desktop\\\\web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;******&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>D:\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>fe80::8dcf:63a1:96ea:3c29%16</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>2601:246:180:808:8dcf:63a1:96ea:3c29</div></td></tr><tr><td><div>2601:246:180:808:711b:c1d3:9c93:c2f5</div></td></tr><tr><td><div>fe80::49d:83c:e7f3:3d80%12</div></td></tr><tr><td><div>2001:0:5ef5:79fd:49d:83c:e7f3:3d80</div></td></tr><tr><td><div>BLACKVENOM</div></td></tr><tr><td><div>192.168.56.1</div></td></tr><tr><td><div>192.168.1.149</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>fe80::c50f:a383:2fff:4eec%8</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.14.6-stable+timestamp.2016.05.10.00.21.47</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_https</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_local</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_restful</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_scheduler</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_shell</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">now</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 6, 7, 22, 11, 7, 742000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">raw_args</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">raw_extension</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">url</td><td style="vertical-align:top;">:</td><td><div>/estore3Master/default/uploadProduct</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">utcnow</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 6, 8, 3, 11, 7, 742000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi</td><td style="vertical-align:top;">:</td><td><div>&lt;gluon.main.LazyWSGI object at 0x08F54510&gt;</div></td></tr></table></div>'
+tRp70
+sS'frames'
+p71
+(lp72
+(dp73
+S'file'
+p74
+S'D:\\Desktop\\web2py\\gluon\\restricted.py'
+p75
+sS'dump'
+p76
+(dp77
+S'environment'
+p78
+S"{'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}"
+p79
+sS'ccode'
+p80
+S'<code object <module> at 07E08DE8, file "D:\\Desk...s\\estore3Master\\controllers/default.py", line 12>'
+p81
+ssS'lnum'
+p82
+I227
+sS'lines'
+p83
+(dp84
+I224
+S'            ccode = code'
+p85
+sI225
+S'        else:'
+p86
+sI226
+S'            ccode = compile2(code, layer)'
+p87
+sI227
+S'        exec ccode in environment'
+p88
+sI228
+S'    except HTTP:'
+p89
+sI229
+S'        raise'
+p90
+sI230
+S'    except RestrictedError:'
+p91
+sI231
+S'        # do not encapsulate (obfuscate) the original RestrictedError'
+p92
+sI222
+S'    try:'
+p93
+sI223
+S'        if isinstance(code, types.CodeType):'
+p94
+ssS'call'
+p95
+S"(code='# -*- coding: utf-8 -*-\\n# this file is released ...\\n\\nresponse._vars=response._caller(uploadProduct)\\n', environment={'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}, layer=r'D:\\Desktop\\web2py\\applications\\estore3Master\\controllers/default.py')"
+p96
+sS'func'
+p97
+S'restricted'
+p98
+sa(dp99
+g74
+S'D:\\Desktop\\web2py\\applications\\estore3Master\\controllers\\default.py'
+p100
+sg76
+(dp101
+sg82
+I317
+sg83
+(dp102
+I306
+S''
+sI307
+S''
+sI308
+S'def call():'
+p103
+sI309
+S'    """'
+p104
+sI310
+S'    exposes services. for example:'
+p105
+sI311
+S'    http://..../[app]/default/call/jsonrpc'
+p106
+sI312
+S'    decorate with @services.jsonrpc the functions to expose'
+p107
+sI313
+S'    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv'
+p108
+sI314
+S'    """'
+p109
+sI315
+S'    return service()'
+p110
+ssg95
+S'()'
+p111
+sg97
+S'<module>'
+p112
+sa(dp113
+g74
+S'D:\\Desktop\\web2py\\gluon\\globals.py'
+p114
+sg76
+(dp115
+S'self'
+p116
+S'undefined'
+p117
+sS'f'
+S'<function uploadProduct>'
+p118
+ssg82
+I417
+sg83
+(dp119
+I416
+S'        self._vars = None'
+p120
+sI417
+S'        self._caller = lambda f: f()'
+p121
+sI418
+S'        self._view_environment = None'
+p122
+sI419
+S'        self._custom_commit = None'
+p123
+sI420
+S'        self._custom_rollback = None'
+p124
+sI421
+S"        self.generic_patterns = ['*']"
+p125
+sI412
+S"        self.flash = ''            # used by the default view layout"
+p126
+sI413
+S'        self.meta = Storage()      # used by web2py_ajax.html'
+p127
+sI414
+S'        self.menu = []             # used by the default view layout'
+p128
+sI415
+S'        self.files = []            # used by web2py_ajax.html'
+p129
+ssg95
+S'(f=<function uploadProduct>)'
+p130
+sg97
+S'<lambda>'
+p131
+sa(dp132
+g74
+S'D:\\Desktop\\web2py\\gluon\\tools.py'
+p133
+sg76
+(dp134
+S'action'
+p135
+S'<function uploadProduct>'
+p136
+sS'a'
+S'()'
+p137
+sS'b'
+g21
+ssg82
+I4241
+sg83
+(dp138
+I4236
+S'                    flag = condition'
+p139
+sI4237
+S'                if not flag:'
+p140
+sI4238
+S'                    current.session.flash = self.messages.access_denied'
+p141
+sI4239
+S'                    return call_or_redirect('
+p142
+sI4240
+S'                        self.settings.on_failed_authorization)'
+p143
+sI4241
+S'                return action(*a, **b)'
+p144
+sI4242
+S'            f.__doc__ = action.__doc__'
+p145
+sI4243
+S'            f.__name__ = action.__name__'
+p146
+sI4244
+S'            f.__dict__.update(action.__dict__)'
+p147
+sI4245
+S'            return f'
+p148
+ssg95
+S'(*a=(), **b={})'
+p149
+sg97
+S'f'
+sa(dp150
+g74
+S'D:\\Desktop\\web2py\\applications\\estore3Master\\controllers\\default.py'
+p151
+sg76
+(dp152
+S'form.vars'
+p153
+S'<Storage {}>'
+p154
+sS'form'
+p155
+S'<gluon.sqlhtml.SQLFORM object>'
+p156
+sS'db.product'
+p157
+S'<Table product (id, code, name, description, qty...reated_on, created_by, modified_on, modified_by)>'
+p158
+sS').delete'
+p159
+g117
+sS'db.product.id'
+p160
+S'<pydal.objects.Field object>'
+p161
+sS'form.vars.id'
+p162
+S'None'
+p163
+sS'global db'
+p164
+S'<DAL uri="sqlite://storage.sqlite">'
+p165
+ssg82
+I261
+sg83
+(dp166
+I256
+S'    form = SQLFORM(db.product)'
+p167
+sI257
+S'#    while db.product.v_ID != auth.user.Organization_id:'
+p168
+sI258
+S"#        response.flash = 'Please enter the correct Vendor/Organization'"
+p169
+sI259
+S"#            redirect(URL('manageProducts'))"
+p170
+sI260
+S'    if db.product.v_ID != auth.user.Organization_id:'
+p171
+sI261
+S'        db(db.product.id==form.vars.id).delete()'
+p172
+sI262
+S"        redirect(URL('manageProducts'))"
+p173
+sI263
+S'    elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:'
+p174
+sI264
+S"        response.flash = 'new product added'"
+p175
+sI265
+S"        redirect(URL('manageProducts'))"
+p176
+ssg95
+S'()'
+p177
+sg97
+S'uploadProduct'
+p178
+sa(dp179
+g74
+S'D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py'
+p180
+sg76
+(dp181
+S'table'
+p182
+S'<Table product (id, code, name, description, qty...reated_on, created_by, modified_on, modified_by)>'
+p183
+sS'self'
+p184
+S'<Set (product.id IS NULL)>'
+p185
+sS'f'
+g117
+sS'table._before_delete'
+p186
+S'[<unbound method Set.delete_uploaded_files>, <function <lambda>>]'
+p187
+sS'builtinany'
+p188
+S'<built-in function any>'
+p189
+ssg82
+I2039
+sg83
+(dp190
+I2034
+S''
+sI2035
+S'    def delete(self):'
+p191
+sI2036
+S'        db = self.db'
+p192
+sI2037
+S'        tablename = db._adapter.get_table(self.query)'
+p193
+sI2038
+S'        table = db[tablename]'
+p194
+sI2039
+S'        if any(f(self) for f in table._before_delete): return 0'
+p195
+sI2040
+S'        ret = db._adapter.delete(tablename, self.query)'
+p196
+sI2041
+S'        ret and [f(self) for f in table._after_delete]'
+p197
+sI2042
+S'        return ret'
+p198
+sI2043
+S''
+ssg95
+S'(self=<Set (product.id IS NULL)>)'
+p199
+sg97
+S'delete'
+p200
+sa(dp201
+g74
+S'D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py'
+p202
+sg76
+(dp203
+S'table'
+p204
+g117
+sS'self'
+p205
+S'<Set (product.id IS NULL)>'
+p206
+sS'f'
+S'<function <lambda>>'
+p207
+sS'builtinany'
+p208
+S'<built-in function any>'
+p209
+ssg82
+I2039
+sg83
+(dp210
+I2034
+S''
+sI2035
+S'    def delete(self):'
+p211
+sI2036
+S'        db = self.db'
+p212
+sI2037
+S'        tablename = db._adapter.get_table(self.query)'
+p213
+sI2038
+S'        table = db[tablename]'
+p214
+sI2039
+S'        if any(f(self) for f in table._before_delete): return 0'
+p215
+sI2040
+S'        ret = db._adapter.delete(tablename, self.query)'
+p216
+sI2041
+S'        ret and [f(self) for f in table._after_delete]'
+p217
+sI2042
+S'        return ret'
+p218
+sI2043
+S''
+ssg95
+S'((f=<function <lambda>>,))'
+p219
+sg97
+S'<genexpr>'
+p220
+sa(dp221
+g74
+S'D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py'
+p222
+sg76
+(dp223
+S'qset.update'
+p224
+S'<bound method Set.update of <Set (product.id IS NULL)>>'
+p225
+sS'is_active'
+p226
+g117
+sS'builtinFalse'
+p227
+S'False'
+p228
+sS'qset'
+p229
+S'<Set (product.id IS NULL)>'
+p230
+ssg82
+I393
+sg83
+(dp231
+I388
+S'        self._before_update.append('
+p232
+sI389
+S'            lambda qset, fs, db=archive_db, an=archive_name, cn=current_record:'
+p233
+sI390
+S'                                archive_record(qset, fs, db[an], cn))'
+p234
+sI391
+S'        if is_active and is_active in fieldnames:'
+p235
+sI392
+S'            self._before_delete.append('
+p236
+sI393
+S'                lambda qset: qset.update(is_active=False))'
+p237
+sI394
+S'            newquery = lambda query, t=self, name=self._tablename: \\'
+p238
+sI395
+S'                reduce(AND, [db[tn].is_active == True'
+p239
+sI396
+S'                            for tn in db._adapter.tables(query)'
+p240
+sI397
+S"                            if tn == name or getattr(db[tn], '_ot', None) == name])"
+p241
+ssg95
+S'(qset=<Set (product.id IS NULL)>)'
+p242
+sg97
+g131
+sa(dp243
+g74
+S'D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py'
+p244
+sg76
+(dp245
+S'update_fields'
+p246
+S"{'is_active': False, 'modified_by': <function lazy_user>, 'modified_on': datetime.datetime(2016, 6, 7, 22, 11, 7, 742000)}"
+p247
+sS'fields'
+p248
+g117
+sS'builtinTrue'
+p249
+S'True'
+p250
+sS'update'
+p251
+g117
+sS'table._listify'
+p252
+S'<bound method Table._listify of <Table product (...eated_on, created_by, modified_on, modified_by)>>'
+p253
+sS'table'
+p254
+S'<Table product (id, code, name, description, qty...reated_on, created_by, modified_on, modified_by)>'
+p255
+ssg82
+I2051
+sg83
+(dp256
+I2048
+S'        table._attempt_upload(update_fields)'
+p257
+sI2049
+S'        if any(f(self, update_fields) for f in table._before_update):'
+p258
+sI2050
+S'            return 0'
+p259
+sI2051
+S'        fields = table._listify(update_fields, update=True)'
+p260
+sI2052
+S'        if not fields:'
+p261
+sI2053
+S'            raise SyntaxError("No fields to update")'
+p262
+sI2054
+S'        ret = db._adapter.update("%s" % table._tablename, self.query, fields)'
+p263
+sI2055
+S'        ret and [f(self, update_fields) for f in table._after_update]'
+p264
+sI2046
+S'        tablename = db._adapter.get_table(self.query)'
+p265
+sI2047
+S'        table = db[tablename]'
+p266
+ssg95
+S"(self=<Set (product.id IS NULL)>, **update_fields={'is_active': False, 'modified_by': <function lazy_user>, 'modified_on': datetime.datetime(2016, 6, 7, 22, 11, 7, 742000)})"
+p267
+sg97
+S'update'
+p268
+sa(dp269
+g74
+S'D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py'
+p270
+sg76
+(dp271
+S'builtinSyntaxError'
+p272
+S"<type 'exceptions.SyntaxError'>"
+p273
+sS'name'
+p274
+S"'keywords'"
+p275
+ssg82
+I681
+sg83
+(dp276
+I676
+S'                    row[name] = new_value = ofield.compute(row)'
+p277
+sI677
+S'                    new_fields[name] = (ofield, new_value)'
+p278
+sI678
+S'                except (KeyError, AttributeError):'
+p279
+sI679
+S'                    # error silently unless field is required!'
+p280
+sI680
+S'                    if ofield.required:'
+p281
+sI681
+S"                        raise SyntaxError('unable to compute field: %s' % name)"
+p282
+sI682
+S'                    elif ofield.default is not None:'
+p283
+sI683
+S'                        row[name] = new_value = ofield.default'
+p284
+sI684
+S'                        new_fields[name] = (ofield, new_value)'
+p285
+sI685
+S'        return list(new_fields.values())'
+p286
+ssg95
+S"(self=<Table product (id, code, name, description, qty...reated_on, created_by, modified_on, modified_by)>, fields={'is_active': False, 'modified_by': <function lazy_user>, 'modified_on': datetime.datetime(2016, 6, 7, 22, 11, 7, 742000)}, update=True)"
+p287
+sg97
+S'_listify'
+p288
+sasS'pyver'
+p289
+S'Python 2.7.9: D:\\Desktop\\web2py\\web2py.exe (prefix: C:\\Python27)'
+p290
+sS'session'
+p291
+g69
+(S's\x86\n\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">auth</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">expiration</td><td style="vertical-align:top;">:</td><td><div>3600</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">hmac_key</td><td style="vertical-align:top;">:</td><td><div>aca1d310-bafb-4b5c-aa26-a318fb2d3fee</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_visit</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 6, 7, 22, 7, 12, 778000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">user</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">Organization_id</td><td style="vertical-align:top;">:</td><td><div>5L</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">email</td><td style="vertical-align:top;">:</td><td><div>kcarden2@altiods.com</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">first_name</td><td style="vertical-align:top;">:</td><td><div>kc</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">id</td><td style="vertical-align:top;">:</td><td><div>5L</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">job_title</td><td style="vertical-align:top;">:</td><td><div>tk</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_name</td><td style="vertical-align:top;">:</td><td><div>ck</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">registration_id</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">registration_key</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">reset_password_key</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">user_groups</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">5</td><td style="vertical-align:top;">:</td><td><div>user_5</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">flash</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_orderby</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_query</td><td style="vertical-align:top;">:</td><td><div>db.product.id&gt;0</div></td></tr></table></div>'
+tRp292
+sS'etype'
+p293
+S"<type 'exceptions.SyntaxError'>"
+p294
+sS'date'
+p295
+S'Tue Jun 07 22:11:08 2016'
+p296
+sS'response'
+p297
+g69
+(S's-\x1d\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">body</td><td style="vertical-align:top;">:</td><td><div>&lt;cStringIO.StringO object at 0x08F54CA0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">session_id_estore3master</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-a7a3048a-a936-4a6a-b922-54f31f16e545<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div>/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">delimiters</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>{{</div></td></tr><tr><td><div>}}</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">files</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">flash</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">form_label_separator</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">formstyle</td><td style="vertical-align:top;">:</td><td><div>bootstrap3_inline</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generic_patterns</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>*</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">google_analytics_id</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">headers</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">X-Powered-By</td><td style="vertical-align:top;">:</td><td><div>web2py</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">logo</td><td style="vertical-align:top;">:</td><td><div><a class="navbar-brand" href="/estore3Master/default/index"><b><span>HeathTechLink</span></b>&trade;&nbsp;</a></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">menu</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div><table><tr><td><div>My Orders</div></td></tr><tr><td><div>None</div></td></tr><tr><td><div>/estore3Master/default/my_orders</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">meta</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">author</td><td style="vertical-align:top;">:</td><td><div>Your Name &lt;you@example.com&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">description</td><td style="vertical-align:top;">:</td><td><div>a cool new app</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generator</td><td style="vertical-align:top;">:</td><td><div>Web2py Web Framework</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">keywords</td><td style="vertical-align:top;">:</td><td><div>web2py, python, framework</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">models_to_run</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>^\\w+\\.py$</div></td></tr><tr><td><div>^default/\\w+\\.py$</div></td></tr><tr><td><div>^default/uploadProduct/\\w+\\.py$</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">postprocessing</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_client</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_compression_level</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_expires</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_data_name</td><td style="vertical-align:top;">:</td><td><div>session_data_estore3master</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_file</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;D:\\\\Desktop\\\\web2py\\\\applications\\\\estore3Master\\\\sessions\\\\1f2\\\\0c2\\\\127.0.0.1-a7a3048a-a936-4a6a-b922-54f31f16e545&#x27;, mode &#x27;rb+&#x27; at 0x08CC4EE8&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_filename</td><td style="vertical-align:top;">:</td><td><div>D:\\Desktop\\web2py\\applications\\estore3Master\\sessions\\127.0.0.1-a7a3048a-a936-4a6a-b922-54f31f16e545</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_hash</td><td style="vertical-align:top;">:</td><td><div>6c465a4882a8e6550db645b283b2d0a8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-a7a3048a-a936-4a6a-b922-54f31f16e545</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_name</td><td style="vertical-align:top;">:</td><td><div>session_id_estore3master</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_locked</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_masterapp</td><td style="vertical-align:top;">:</td><td><div>estore3Master</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_new</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_storage_type</td><td style="vertical-align:top;">:</td><td><div>file</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">status</td><td style="vertical-align:top;">:</td><td><div>200</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">subtitle</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">title</td><td style="vertical-align:top;">:</td><td><div>Estore3Master</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">view</td><td style="vertical-align:top;">:</td><td><div>default/uploadProduct.html</div></td></tr></table></div>'
+tRp298
+sS'locals'
+p299
+(dp300
+S'name'
+p301
+S"'keywords'"
+p302
+sS'to_compute'
+p303
+S"[('keywords', <pydal.objects.Field object>)]"
+p304
+sS'fields'
+p305
+S"{'is_active': False, 'modified_by': <function lazy_user>, 'modified_on': datetime.datetime(2016, 6, 7, 22, 11, 7, 742000)}"
+p306
+sS'self'
+p307
+S'<Table product (id, code, name, description, qty...reated_on, created_by, modified_on, modified_by)>'
+p308
+sg268
+g250
+sS'value'
+p309
+S'<function lazy_user>'
+p310
+sS'field'
+p311
+S'<pydal.objects.Field object>'
+p312
+sS'ofield'
+p313
+S'<pydal.objects.Field object>'
+p314
+sS'new_fields'
+p315
+S"{'is_active': (<pydal.objects.Field object>, False), 'modified_by': (<pydal.objects.Field object>, <function lazy_user>), 'modified_on': (<pydal.objects.Field object>, datetime.datetime(2016, 6, 7, 22, 11, 7, 742000))}"
+p316
+sS'row'
+p317
+S"<Row {'modified_on': datetime.datetime(2016, 6, 7, 22, 11, 7, 742000), 'is_active': False}>"
+p318
+sssS'traceback'
+p319
+S'Traceback (most recent call last):\n  File "D:\\Desktop\\web2py\\gluon\\restricted.py", line 227, in restricted\n    exec ccode in environment\n  File "D:\\Desktop\\web2py\\applications\\estore3Master\\controllers/default.py", line 317, in <module>\n  File "D:\\Desktop\\web2py\\gluon\\globals.py", line 417, in <lambda>\n    self._caller = lambda f: f()\n  File "D:\\Desktop\\web2py\\gluon\\tools.py", line 4241, in f\n    return action(*a, **b)\n  File "D:\\Desktop\\web2py\\applications\\estore3Master\\controllers/default.py", line 261, in uploadProduct\n    db(db.product.id==form.vars.id).delete()\n  File "D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py", line 2039, in delete\n    if any(f(self) for f in table._before_delete): return 0\n  File "D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py", line 2039, in <genexpr>\n    if any(f(self) for f in table._before_delete): return 0\n  File "D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py", line 393, in <lambda>\n    lambda qset: qset.update(is_active=False))\n  File "D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py", line 2051, in update\n    fields = table._listify(update_fields, update=True)\n  File "D:\\Desktop\\web2py\\gluon\\packages\\dal\\pydal\\objects.py", line 681, in _listify\n    raise SyntaxError(\'unable to compute field: %s\' % name)\nSyntaxError: unable to compute field: keywords\n'
+p320
+s.
