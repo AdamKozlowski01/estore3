@@ -36,26 +36,36 @@ def convs():
 
 @auth.requires_login()
 def findConv():
+    b=False
     response.view = 'default/findConv.html'
     convForm = SQLFORM.factory(Field("find_a_conversation", "string"), formstyle='bootstrap3_stacked', submit_button="Load")
     totForm = FORM()
     messages = ''
-    num = 0
     rows = db(db.current_conv.conv != None).select()
     if convForm.process().accepted:
         messages = parse_conv(convForm.vars.find_a_conversation)
-        num = 1
+        b=True
     else:
         totForm = FORM(convForm, '', '')
-        num = 2
-    return dict(convForm=convForm,messages=messages, num = num)
+    return dict(convForm=convForm,messages=messages, b=b)
 
 def reply():
+    conversation = db(db.current_conv).select().first()
     response.view = 'default/reply.html'
     respForm = SQLFORM.factory(Field("response", "string"), formstyle='bootstrap3_stacked', submit_button="Send")
     if respForm.process().accepted:
         add_conv(respForm.vars.response)
-    return dict(respForm=respForm)
+        b=True
+    return dict(respForm=respForm,messages=parse_conv(str(conversation.conv)))
+
+def messages():
+    b = db(db.disp).select().first()
+    btemp = b.num
+    btemp = btemp + 1
+    db(db.disp.num).update(num=btemp)
+    conversation = db(db.current_conv).select().first()
+    response.view = 'default/messages.html'
+    return dict(messages=parse_conv(str(conversation.conv)), btemp=btemp)
 
 def add_conv(s):
     conversation = db(db.current_conv).select().first()
@@ -105,7 +115,7 @@ def get_conv(f):
     return tempStr
 
 def parse_conv(f):
-        if f == "":
+        if f == None:
             conversation = db(db.current_conv).select().first()
             f = str(conversation.conv)
         tempStr = get_conv(f)
@@ -114,7 +124,6 @@ def parse_conv(f):
         messages = []
         for line in infile:
             messages.append(str(line))
-        #totForm = FORM(convForm, messages, respForm)
         return messages
 
 

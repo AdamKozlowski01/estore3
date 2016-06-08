@@ -1,0 +1,12 @@
+<div>
+    {{=convForm}}
+    {{if b == True:}}
+        <div style = "height:510px; overflow-y: auto; top: 80px;">
+        {{for message in messages:}}
+            <p style='background-color: #FFFFFF;'>
+            {{=message}}
+            </p>
+        {{pass}}
+        </div>
+    {{pass}}
+</div>

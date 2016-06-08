@@ -1,10 +1,4 @@
 <div>
     {{=convForm}}
-    <div style = "height:510px; overflow-y: auto;">
-    {{for message in messages:}}
-        <p style='background-color: #FFFFFF;'>
-        {{=message}}
-        </p>
-    {{pass}}
-    </div>
+    {{=LOAD('default','messages.load',ajax=True)}}
 </div>
