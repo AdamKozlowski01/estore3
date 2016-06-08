@@ -105,7 +105,7 @@ def get_conv(f):
     return tempStr
 
 def parse_conv(f):
-        if f == None:
+        if f == "":
             conversation = db(db.current_conv).select().first()
             f = str(conversation.conv)
         tempStr = get_conv(f)
