@@ -14,6 +14,7 @@ def textbox():
         #strname = names.split()
         #strrequest = request.vars
     messages = db(Post).select(orderby=~Post.created_on)
+    form = SQLFORM(Post, formstyle='divs')
     if form.process().accepted:
         #js = "jQuery('.new').slideDown('slow')"
         #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')

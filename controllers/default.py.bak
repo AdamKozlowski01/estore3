@@ -9,7 +9,10 @@
 #########################################################################
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> Andrew
 def textbox():
     #for names in db(conversations).text_file:
         #strname = names.split()
@@ -125,6 +128,11 @@ def parse_conv(f):
 
 def findConvSql():
     test = []
+<<<<<<< HEAD
+>>>>>>> Andrew
+=======
+=======
+>>>>>>> master
 >>>>>>> Andrew
 
 def index():
@@ -263,15 +271,27 @@ def user():
     to decorate functions that need access control
     """
 <<<<<<< HEAD
-    form=auth()            
-    return dict(form=form)
-
-def registerOrg():
+<<<<<<< HEAD
 =======
     form=auth()
     return dict(form=form)
 
 def RegisterOrganization():
+=======
+>>>>>>> Andrew
+    form=auth()            
+    return dict(form=form)
+
+def registerOrg():
+<<<<<<< HEAD
+=======
+    form=auth()
+    return dict(form=form)
+
+def RegisterOrganization():
+>>>>>>> Andrew
+=======
+>>>>>>> master
 >>>>>>> Andrew
 
     formOrg = SQLFORM(db.hospitals)

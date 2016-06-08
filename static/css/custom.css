@@ -33,11 +33,7 @@
   filter: FlipH;                 /* IE 6/7/8 */
 }
 .btn-primary {
-<<<<<<< HEAD
-  background: #0070B2;
-=======
   background: #3EB7FF;
->>>>>>> Andrew
   border: 0;
 }
 .btn-primary:hover {
@@ -57,17 +53,10 @@
     left: 500px;
 }
 .right-sidebar .navbar-inverse{
-<<<<<<< HEAD
-    bottom: 0px;
-    left: 1139px;
-    width: 300px;
-    height: 818px;
-=======
     background: #0070B2;
     bottom: 0px;
     top: 50px;
     left: 1139px;
     width: 300px;
     height: 764px;
->>>>>>> Andrew
 }

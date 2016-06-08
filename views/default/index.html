@@ -19,11 +19,7 @@
     </table>
   </div>
 
-<<<<<<< HEAD
   <button class="btn btn-primary" onclick="jQuery('.shopping-cart').slideToggle()">Wishlist {% #if cart.length > 0%}({%cart.length%}){% /if %}</button>
-=======
-  <button class="btn btn-primary" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
->>>>>>> Andrew
 
   <center style="padding:50px">
     <form class="form-inline">
@@ -32,14 +28,11 @@
           <div class="input-group-addon">Find Products</div>
           <input type="text" class="form-control" name="keywords" style="width:300px"
                  placeholder="">
-<<<<<<< HEAD
-=======
         </div>
         <div class="input-group">
           <div class="input-group-addon">Max Price</div>
           <input type="text" class="form-control" name="price" style="width:100px"
                placeholder="400.00">
->>>>>>> Andrew
         </div>
       </div>
     <button type="submit" class="btn btn-primary" on-click="search">Search</button>
@@ -67,11 +60,7 @@
       <tr class="product" data-product="{% id %}">
         <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
-<<<<<<< HEAD
-        <td>{% qty_in_stock %}</td>
-=======
         <td>${% qty_in_stock %}</td>
->>>>>>> Andrew
         <td>${% unit_price %}</td>
         <td>
             {% #stars:num %}
@@ -84,12 +73,9 @@
               {%/if%}
             {% /stars %}
         </td>
-<<<<<<< HEAD
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
-=======
->>>>>>> Andrew
       </tr>
       {% /products %}
     </tbody>
