@@ -45,14 +45,14 @@ db.define_table(
 
 db.define_table(
     'product',
-    Field('code',requires=NE),
-    Field('name',requires=NE),
-    Field('description',requires=NE),
+    Field('code',requires=NE,widget=widget(_placeholder='Product Code', _readonly=False)),
+    Field('name',requires=NE,widget=widget(_placeholder='Product Name', _readonly=False)),
+    Field('description',requires=NE,widget=widget(_placeholder='Product Description', _readonly=False)),
     Field('qty_in_stock','integer'),
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
-    Field('tags'),
-    Field('category'),
+    Field('tags',widget=widget(_placeholder='Product Tags', _readonly=False)),
+    Field('category',widget=widget(_placeholder='Product Category', _readonly=False)),
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
@@ -125,6 +125,10 @@ db.define_table(
           compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
 '''
+
+db.product._enable_record_versioning(archive_db=db,archive_name='productArchives',current_record='current_record',is_active='is_active')
+db.customer._enable_record_versioning(archive_db=db,archive_name='customerArchives',current_record='current_record',is_active='is_active')
+
 if db(db.product).count()==0:
     import re
     import os

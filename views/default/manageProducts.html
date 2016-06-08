@@ -1,0 +1,58 @@
+{{extend 'layout.html'}}
+
+
+<h1>Organization: {{=auth.user.Organization_id}}</h1>
+<h2>Authorized User for {{=auth.user.Organization_id}}: {{=auth.user.last_name}}, {{=auth.user.first_name}}</h2>
+</br>
+    <form action="{{=URL('default','uploadProduct')}}">
+        <input class="btn btn-primary" type="submit" value="Add New Product">
+    </form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Edit</th>
+            <th>Code</th>
+            <th>Product Name</th>
+            <th>Product Description</th>
+            <th>Quantity in Stock</th>
+            <th>Unit Price</th>
+            <th>Image</th>
+            <th>Tags</th>
+            <th>Category</th>
+            <th>Populatrity</th>
+            <th>Featured</th>
+            <th>On Sale</th>
+            <th>Tax</th>
+            <th>Rating</th>
+            <th>Keywords</th>
+            <th>Deactivate</th>
+        </tr>
+    </thead>
+    {{for prod in products:}}
+        <tr>
+            <td><a href="{{=URL('default','editProduct')}}?value={{=prod.id}}">
+        <input class="btn btn-primary" type="submit" value="Edit">
+                </a>
+            </td>
+            <td>{{=prod.code}}</td>
+            <td>{{=prod.name}}</td>
+            <td>{{=prod.description}}</td>
+            <td>{{=prod.qty_in_stock}}</td>
+            <td>{{=prod.unit_price}}</td>
+            <td>Product Image</td>
+            <td>{{=prod.tags}}</td>
+            <td>{{=prod.category}}</td>
+            <td>{{=prod.popularity}}</td>
+            <td>{{=prod.featured}}</td>
+            <td>{{=prod.on_sale}}</td>
+            <td>{{=prod.tax}}</td>
+            <td>{{=prod.rating}}</td>
+            <td>{{=prod.keywords}}</td>
+            <td><a href="{{=URL('default','deactivateProduct')}}?value={{=prod.id}}">
+        <input class="btn btn-primary" type="submit" value="Deactivate: not implemented">
+                </a>
+            </td>
+        </tr>
+{{pass}}
+</table>
