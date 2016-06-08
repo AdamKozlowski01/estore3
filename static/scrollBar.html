@@ -1,0 +1,68 @@
+<!-- Main ========================================= -->
+    <!-- Begin page content -->
+    <div class="container-fluid main-container">
+      {{if left_sidebar_enabled:}}
+        <div class="col-md-3 left-sidebar">
+            {{block left_sidebar}}
+            <h3>Left Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+      {{pass}}
+
+      <div class="{{=middle_column}}">
+        {{block center}}
+        {{include}}
+        {{end}}
+      </div>
+
+      {{if right_sidebar_enabled:}}
+        <div class="col-md-3">
+            {{block right_sidebar}}
+            <h3>Right Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+      {{pass}}
+
+    </div>
+
+    {{block ads}}{{end}}
+
+    <title>Something</title>
+    <style type="text/css">
+        #scrolly{
+            width: 700px;
+            height: 190px;
+            overflow: auto;
+            overflow-y: hidden;
+            margin: 0 auto;
+            white-space: nowrap
+        }
+
+        #scrolly img{
+            width: 200px;
+            height: 200px;
+            margin: 20px 10px;
+            display: inline;
+        }
+        </style>
+    </head>
+    <body>
+        <div id='scrolly'> 
+            <a href="http://127.0.0.1:8080/HealthTechLink_Vince/default/product?value=58">
+                     <img src="{{=URL('static','6.jpg')}}">
+                    </a>
+            <a href="http://127.0.0.1:8080/HealthTechLink_Vince/default/product?value=55">
+                     <img src="{{=URL('static','5.jpg')}}">
+                    </a>
+            <a href="http://127.0.0.1:8080/HealthTechLink_Vince/default/product?value=57">
+                     <img src="{{=URL('static','1.jpg')}}">
+                    </a>
+            <img src="{{=URL('static','2.jpg')}}"></img>
+            <img src="{{=URL('static','3.jpg')}}"></img>
+            <img src="{{=URL('static','4.jpg')}}"></img>           
+    </body>
+
+        </div>
+    </body>
