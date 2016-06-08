@@ -5,42 +5,29 @@
 <script id="template" type="text/ractive">
 
   <div class="shopping-cart">
-    <h4>Shopping Cart</h4>
+    <h4>Wishlist</h4>
     <table class="table">
       {% #cart %}
       <tr>
-        <td>{% name %}</td>
+        <td><a href = "{{=URL('default', 'product')}}?value={%id%}">{% name %}</a></td>
         <td>{% unit_price %}</td>
-        <td>x <input value="{% quantity_in_cart %}"/> =</td>
-        <td>${% unit_price*quantity_in_cart %}</td>
+        <td><button class="btn btn-primary" on-click="remove-from-cart:{% id %}">Remove</button></td>
       </tr>
       {% /cart %}
       <tr>
-        <td>TOTAL</td>
-        <td></td>
-        <td></td>
-        <td>${% total(cart) %}</td>
       </tr>
     </table>
-    {% #if cart.length>0 %}
-    <a class="btn btn-primary" on-click="submit-order" href="{{=URL('order_info')}}">Submit Order</a>
-    {% /if %}
   </div>
 
-  <button class="btn btn-primary" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
+  <button class="btn btn-primary" onclick="jQuery('.shopping-cart').slideToggle()">Wishlist {% #if cart.length > 0%}({%cart.length%}){% /if %}</button>
 
   <center style="padding:50px">
     <form class="form-inline">
       <div class="form-group">
         <div class="input-group">
-          <div class="input-group-addon">Find Me</div>
+          <div class="input-group-addon">Find Products</div>
           <input type="text" class="form-control" name="keywords" style="width:300px"
                  placeholder="">
-        </div>
-        <div class="input-group">
-          <div class="input-group-addon">Max Price</div>
-          <input type="text" class="form-control" name="price" style="width:100px"
-               placeholder="400.00">
         </div>
       </div>
     <button type="submit" class="btn btn-primary" on-click="search">Search</button>
@@ -64,13 +51,23 @@
       </tr>
     </thead>
     <tbody>
-      {% #products: num %}
+      {% #products:num %}
       <tr class="product" data-product="{% id %}">
         <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
         <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
-        <td>{% rating %}</td>
+        <td>
+            {% #stars:num %}
+              {%#if (parseInt(stars[num]) <= parseInt(rating)) %}
+                <img src="{{=URL('static','images/heart.png')}}" style = "width:10px;height:10px;">
+              <!--//{% elseif ((parseInt(stars[num]) > parseInt(rating)))&& (((parseFloat(rating))-(parseFloat(stars[num]))) > 0) && (((parseFloat(rating))-(parseFloat(stars[num]))) < 1) %}
+                  //<img src="{{=URL('static','images/heartHalf.png')}}" style = "width:10px;height:10px;"> -->
+              {% else %}
+                <img src="{{=URL('static','images/heartEmpty.png')}}" style = "width:10px;height:10px;">
+              {%/if%}
+            {% /stars %}
+        </td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
@@ -104,6 +101,8 @@
 <script>
   var search_products_url = '{{=URL('search')}}';
   var submit_order_url = '{{=URL('submit_order')}}';
+
+  var starValues = [1.0,2.0,3.0,4.0,5.0];
   jQuery(function(){
     var loading = true;
 
@@ -112,31 +111,24 @@
       template: '#template',
       delimiters: ['{%','%}'],
       tripleDelimiters: [ '{%%', '%%}' ],     
-      data: { products: [], selectedProduct: 0, cart: [], products_by_id: {}, image: '',
-              total: function(cart) {
-                var total = 0.0;
-                cart.map(function(p){total+=p.quantity_in_cart*p.unit_price;});
-                if(!loading) window.localStorage.setItem('cart', JSON.stringify(cart));
-                return total; }
+      data: { products: [], selectedProduct: 0, cart: [], products_by_id: {}, stars: [], productsToCompare: []
       }
     });
 
+    MAIN.set('stars', starValues);
     var cart = window.localStorage.getItem('cart');
     if(cart) MAIN.set('cart',eval('('+cart+')'));
     loading = false;
 
     MAIN.on('select',function(event,id) {
       MAIN.set('selectedProduct',id);
-      //JQuery.post('{{=URL('product', 'vars = dict(value = id)')}}';
-      //JQuery.web2py.session.redirect(URL('default', 'product', vars = dict(value = MAIN.data.selectedProduct)));
-
     });
     MAIN.on('buy',function(event,id) {
       id = parseInt(id);
       var product = MAIN.data.products_by_id[id];  
       var found=false;
       for(var k=0; k<MAIN.data.cart.length; k++)
-         if(MAIN.data.cart[k].id==id) {found=true; MAIN.data.cart[k].quantity_in_cart++;}
+         if(MAIN.data.cart[k].id==id) {found=true; product.quantity_in_cart += 1;}
       if(!found) {product.quantity_in_cart=1; MAIN.data.cart.push(product); }
       MAIN.set('cart',MAIN.data.cart);
       jQuery.web2py.flash('Added to Wishlist');
@@ -145,13 +137,12 @@
       event.original.preventDefault();
       var form = jQuery('form');http://127.0.0.1:8000/HealthTechLink/default/index#
       MAIN.set('selectedProduct',0);
-      jQuery('.product').show();  
+      jQuery('.product').show();
       jQuery.getJSON(search_products_url,form.serialize()).done(function(data){
           var product_by_id = {};
           jQuery.web2py.enableElement(form.find('.disabled'));
           MAIN.set('products',data);
           MAIN.set('products_by_id',product_by_id);
-		  MAIN.set('image',image);
           for(var k=0; k<data.length; k++) MAIN.data.products_by_id[data[k].id]=data[k];
       });
     });
@@ -161,6 +152,18 @@
          window.location = jQuery(event.node).attr('href');
          MAIN.set('cart',[]);
       });
+    });
+    MAIN.on('remove-from-cart',function(event,id){
+      id = parseInt(id);
+      var product = MAIN.data.products_by_id[id];
+      var found = false;
+      var k = 0;
+      for(k; k<MAIN.data.cart.length; k++)
+          if(MAIN.data.cart[k].id==id) {found=true;break;}
+        
+      if(found) {MAIN.splice('cart', k, 1);}
+      MAIN.set('cart',MAIN.data.cart);
+      jQuery.web2py.flash('Removed from Wishlist');
     });
   });
 </script>

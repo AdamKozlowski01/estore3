@@ -19,6 +19,7 @@ def textbox():
     return dict(form=form, messages=messages)
 
 def index():
+    session.products = []
     return dict()
 
 def search():
@@ -35,6 +36,8 @@ def search():
     else: query = reduce(lambda a,b: a&b, queries)    
     return db(query).select(limitby=(page*100,page*100+100), orderby=~db.product.rating).as_json()
 
+def emptyCart():
+    session.cart = []
 def submit_order():
     import json
     session.cart = json.loads(request.vars.cart)
@@ -129,13 +132,13 @@ def orgDetails():
     return locals()
 
 def userDetails():
-    user = db(db.auth.settings.table_user == request.get_vars.value).select()
+    user = db(auth.settings.table_user.id == request.get_vars.value).select()
     if user[0] is not None:
         pFirstName = user[0]['first_name']
         pLastName = user[0]['last_name']
         pPosition = user[0]['job_title']
-        pOrganizationID = user[0]['Organization_id']
-        org = db(db.hospitals.id == pOrganizationID).select()
+        oID = user[0]['Organization_id']
+        org = db(db.hospitals.id == oID).select()
         oName = org[0]['h_Name']
     return locals()
     
@@ -181,7 +184,6 @@ def user():
     return dict(form=form)
 
 def RegisterOrganization():
-
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:
         response.flash = 'form accepted'
@@ -198,7 +200,7 @@ def orgAdmin():
     if the user is logged in check to see if they should be the admin
     """
     me = auth.user_id
-    orgAdminID = 3 #retrieved from auth_group
+    orgAdminID = db(auth.settings.table_group.role == "OrgAdmin").select().first().id
     user = db(auth.settings.table_user.id == me).select()
     if user[0] is not None:
         org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)
@@ -210,15 +212,6 @@ def orgAdmin():
 
 @auth.requires_login()
 def postReview():
-
-
-    #prod_id = request.vars.product
-    #vote = db.vote(prod_id, created_by=auth.user.id)
-    #if vote:  vote.update_record(rating = request.vars.rating)
-    #else:     db.vote.insert(prodID = prod_id, rating = request.vars.rating)
-    #avg = db.vote.rating.avg()
-    #row = db(db.vote.prodID == prod_id).select(avg).first()
-    #db(db.product.id == prod_id).update(rating = row[avg])
     me = auth.user_id
     pID = request.get_vars.product
     rows = db(db.product.id == pID).select()
@@ -264,6 +257,23 @@ def uploadProduct():
 
     return dict(form = form)
 	
+def productCompare():
+    '''
+    Compares two or more products side by side.
+    '''
+    productsCompare = session.products
+    return dict(products = productsCompare)
+
+def addProductToSession():
+    product = db(db.products.id == request.get_vars.product).select().first()
+    if product not in session.products:
+        session.products.append(product)
+    redirect(session.prevURL) #return to last page
+def removeProductFromSession():
+    product = db(db.products.id == request.get_vars.product).select().first()
+    if product in session.products:
+        session.products.remove(product)
+    redirect(session.prevURL) #return to last page
 
 @auth.requires_membership('OrgAdmin')
 def editProduct():

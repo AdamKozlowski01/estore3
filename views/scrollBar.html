@@ -30,30 +30,29 @@
     {{block ads}}{{end}}
 
     <title>Something</title>
-    <style type="text/css">
+    <style>
         #scrolly{
             width: 1200px;
-            height: 190px;
+            height: 300px;
             overflow: auto;
             overflow-y: hidden;
-            margin: 0 auto;
+            margin: 30 auto;
             white-space: nowrap
         }
-        img{
-            width: 300px;
-            height: 150px;
+        #scrolly img{
+            width: 200px;
+            height: 200px;
             margin: 20px 10px;
             display: inline;
         }
-        </style>
+    </style>
     </head>
     <body>
         <div id='scrolly'>
-            <img scr = "{{=URL('static', 'images/logo.png')}}"></img>
-            <img src='img/car.jpg'></img>
-            <img src='img/car.jpg'></img>
-            <img src='img/car.jpg'></img>
-            <img src='img/car.jpg'></img>
-            <img src='img/car.jpg'></img>
+            {{products = db(db.product.featured == bool(True)).select()}}
+            {{for product in products:}}
+                <img scr = "{{=URL('default', 'download', args = ['product.image'])}}"></img>
+                <!--<p><h4><a href = "{{=URL('default', 'product', vars=dict(value=product.id))}}">{{=product.name}}</a></h4></p>-->
+            {{pass}}
         </div>
     </body>

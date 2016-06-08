@@ -71,7 +71,7 @@ db.define_table(
     Field('prodID', 'reference product'),
     Field('userID', 'reference ' + auth.settings.table_user_name),
     Field('title', length = 128),
-    Field('rating', requires=IS_IN_SET([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5])),
+    Field('rating', 'float', requires=IS_IN_SET([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5])),
     Field('review_text','text')
     )
 
