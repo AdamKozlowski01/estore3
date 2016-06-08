@@ -1,0 +1,5 @@
+{{extend 'layout.html'}}
+<h1>This is the default/test.html template</h1>
+<h2>
+    {{=prod}}
+</h2>

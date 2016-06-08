@@ -1,0 +1,12 @@
+{{extend 'layout.html'}}
+{{block 'scrollBar.html'}}
+
+<h3>{{=oName}}</h3>
+<p>Organization Size: {{=oSize}}</p>
+{{if oForProfit:}}<p>Is a For Profit Organization</p>{{pass}}
+<p>Contact Email: {{=oContactEmail}}</p>
+<p>
+	{{for e in oEmployees:}}
+	<div> <a href = "{{=URL('default','userDetails', vars = dict(value=e.id))}}">{{if e.job_title != None:}}{{=e.job_title}}{{pass}} {{=e.first_name}} {{=e.last_name}}</div> 
+</p>
+{{pass}}
