@@ -112,7 +112,7 @@
       template: '#template',
       delimiters: ['{%','%}'],
       tripleDelimiters: [ '{%%', '%%}' ],     
-      data: { products: [], selectedProduct: 0, cart: [], products_by_id: {}, 
+      data: { products: [], selectedProduct: 0, cart: [], products_by_id: {}, image: '',
               total: function(cart) {
                 var total = 0.0;
                 cart.map(function(p){total+=p.quantity_in_cart*p.unit_price;});
@@ -151,6 +151,7 @@
           jQuery.web2py.enableElement(form.find('.disabled'));
           MAIN.set('products',data);
           MAIN.set('products_by_id',product_by_id);
+		  MAIN.set('image',image);
           for(var k=0; k<data.length; k++) MAIN.data.products_by_id[data[k].id]=data[k];
       });
     });
