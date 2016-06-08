@@ -30,35 +30,39 @@
     {{block ads}}{{end}}
 
     <title>Something</title>
-    <style>
+    <style type="text/css">
         #scrolly{
-            width: 1200px;
-            height: 250px;
+            width: 700px;
+            height: 190px;
             overflow: auto;
             overflow-y: hidden;
             margin: 0 auto;
-            white-space: nowrap;
-            position: relative;
-            margin-top: 15%;
-            left: 50%;
-            margin-right: -10%;
-            transform: translate(-50%, -50%);
+            white-space: nowrap
         }
+
         #scrolly img{
             width: 200px;
             height: 200px;
             margin: 20px 10px;
-            display: inline;   
+            display: inline;
         }
-    </style>
+        </style>
+    </head>
     <body>
-        <div id='scrolly'>
-            {{products = db(db.product.featured == bool(True)).select()}}
-            {{for product in products:}}
-                {{print product.image}}
+        <div id='scrolly'> 
+            <a href="http://127.0.0.1:8080/HealthTechLink_Vince/default/product?value=58">
+                     <img src="{{=URL('static','6.jpg')}}">
+                    </a>
+            <a href="http://127.0.0.1:8080/HealthTechLink_Vince/default/product?value=55">
+                     <img src="{{=URL('static','5.jpg')}}">
+                    </a>
+            <a href="http://127.0.0.1:8080/HealthTechLink_Vince/default/product?value=57">
+                     <img src="{{=URL('static','1.jpg')}}">
+                    </a>
+            <img src="{{=URL('static','2.jpg')}}"></img>
+            <img src="{{=URL('static','3.jpg')}}"></img>
+            <img src="{{=URL('static','4.jpg')}}"></img>           
+    </body>
 
-                <img scr = "{{=URL('static', 'images/product.image')}}"></img>
-                <!--<p><h4><a href = "{{=URL('default', 'product', vars=dict(value=product.id))}}">{{=product.name}}</a></h4></p>-->
-            {{pass}}
         </div>
     </body>
