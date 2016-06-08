@@ -1,10 +1,19 @@
+# -*- coding: utf-8 -*-
+# this file is released under public domain and you can use without limitations
 
+#########################################################################
+## This is a sample controller
+## - index is the default action of any application
+## - user is required for authentication and authorization
+## - download is for downloading files uploaded in the db (does streaming)
+#########################################################################
 
 
 def textbox():
     form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
     if form.process().accepted:
-        
+        #js = "jQuery('.new').slideDown('slow')"
+        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
         pass
     messages = db(Post).select(orderby=~Post.created_on)
     return dict(form=form, messages=messages)
@@ -17,14 +26,11 @@ def search():
     price = request.vars.price
     page = int(request.vars.page or 0)
     queries = []
-    image = request.vars.image
     if keywords:
         queries.append(reduce(lambda a,b:a&b,
                               [db.product.keywords.contains(k) for k in keywords]))
     if price:
         queries.append(db.product.unit_price<=float(price))
-    if image:
-        queries.append(db.product.image)
     if not queries: query = db.product
     else: query = reduce(lambda a,b: a&b, queries)    
     return db(query).select(limitby=(page*100,page*100+100), orderby=~db.product.rating).as_json()
@@ -66,7 +72,7 @@ def pay():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
         redirect(URL('index'))
     from gluon.contrib.stripe import StripeForm
-    response.flash = None
+    response.flash = None # never show a response.flash
     order = db.purchase_order(request.args(0,cast=int))
     if not order or order.amount_paid:
         session.flash = 'you paid already!'
@@ -192,7 +198,7 @@ def orgAdmin():
     if the user is logged in check to see if they should be the admin
     """
     me = auth.user_id
-    orgAdminID = auth.settings.table_group #retrieved from auth_group
+    orgAdminID = 3 #retrieved from auth_group
     user = db(auth.settings.table_user.id == me).select()
     if user[0] is not None:
         org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)
@@ -248,22 +254,16 @@ def uploadProduct():
     v_idneeds to the be OrdAdmin id(thing)
     '''
     form = SQLFORM(db.product)
-    if db.product.v_ID != auth.user.Organization_id:
-        response.flash = 'Please enter the correct Vendor/Organization'
-
-    elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:
-
     form.vars.v_ID = auth.user.Organization_id
+    #make form.vars.v_ID unchangeable
     if form.process().accepted :
         response.flash = 'new product added'
         redirect(URL('manageProducts'))
     elif form.errors:
         response.flash = 'There are errors in the form. Please correct errors before continuing.'
-    return dict(form = form);
-
 
     return dict(form = form)
-
+	
 
 @auth.requires_membership('OrgAdmin')
 def editProduct():
@@ -283,7 +283,7 @@ def editProduct():
 @auth.requires_membership('OrgAdmin')
 def deactivateProduct():
     '''
-    sets is_active to false, updates db
+    sets is_active to false, updates db 
     then redirects to manageProducts page again
     '''
     record = db(db.product.id == request.get_vars.value).select().first()
