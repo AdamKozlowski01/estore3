@@ -1,4 +1,5 @@
 {{extend 'layout.html'}}
 {{block 'scrollBar.html'}}
 
-{{=form}}
+<h2>Register Organization</h2>
+{{=formOrg}}

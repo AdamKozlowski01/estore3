@@ -1,6 +1,8 @@
 {{extend 'layout.html'}}
 
+
 <div id="products"></div>
+
 
 <script id="template" type="text/ractive">
 
@@ -27,20 +29,15 @@
     {% /if %}
   </div>
 
-  <button class="btn btn-primary" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
+  <button class="btn btn-primary pull-right" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
 
   <center style="padding:50px">
     <form class="form-inline">
       <div class="form-group">
         <div class="input-group">
-          <div class="input-group-addon">Find Me</div>
+          <div class="input-group-addon">Search</div>
           <input type="text" class="form-control" name="keywords" style="width:300px"
                  placeholder="">
-        </div>
-        <div class="input-group">
-          <div class="input-group-addon">Max Price</div>
-          <input type="text" class="form-control" name="price" style="width:100px"
-               placeholder="400.00">
         </div>
       </div>
     <button type="submit" class="btn btn-primary" on-click="search">Search</button>
@@ -48,7 +45,7 @@
   </center>
   {% #if products.length==0 %}
   <center>
-    <img src="{{=URL('static','images/cart.png')}}" style="width:400px"/>
+    <img src="{{=URL('static','logo.png')}}" style="width:400px"/>
   </center>
   {% /if %}
   {% #if products.length>0 %}
@@ -70,7 +67,7 @@
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
         <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
-        <td>{% rating %}</td>
+        <td>{%rating%}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
@@ -94,12 +91,16 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          
       </div>
       </div>
     </div>
   </div>
   
+  
 </script>
+
+
 
 <script>
   var search_products_url = '{{=URL('search')}}';
