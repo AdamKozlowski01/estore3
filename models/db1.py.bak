@@ -126,8 +126,8 @@ db.define_table(
     auth.signature)
 '''
 
-db.product._enable_record_versioning(archive_db=db,archive_name='productArchives',current_record='current_record',is_active='is_active')
-db.customer._enable_record_versioning(archive_db=db,archive_name='customerArchives',current_record='current_record',is_active='is_active')
+#db.product._enable_record_versioning(archive_db=db,archive_name='productArchives',current_record='current_record',is_active='is_active')
+#db.customer._enable_record_versioning(archive_db=db,archive_name='customerArchives',current_record='current_record',is_active='is_active')
 
 if db(db.product).count()==0:
     import re
