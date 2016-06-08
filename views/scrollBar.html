@@ -1,0 +1,60 @@
+<!-- Main ========================================= -->
+    <!-- Begin page content -->
+    <div class="container-fluid main-container">
+      {{if left_sidebar_enabled:}}
+        <div class="col-md-3 left-sidebar">
+            {{block left_sidebar}}
+            <h3>Left Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+      {{pass}}
+
+      <div class="{{=middle_column}}">
+        {{block center}}
+        {{include}}
+        {{end}}
+      </div>
+
+      {{if right_sidebar_enabled:}}
+        <div class="col-md-3">
+            {{block right_sidebar}}
+            <h3>Right Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+      {{pass}}
+
+    </div>
+
+    {{block ads}}{{end}}
+
+    <title>Something</title>
+    <style type="text/css">
+        #scrolly{
+            width: 1200px;
+            height: 190px;
+            overflow: auto;
+            overflow-y: hidden;
+            margin: 0 auto;
+            white-space: nowrap
+        }
+
+        img{
+            width: 300px;
+            height: 150px;
+            margin: 20px 10px;
+            display: inline;
+        }
+        </style>
+    </head>
+    <body>
+        <div id='scrolly'>
+            <img src="{{=URL('static','logo.png')}}"></img>
+            <img src='img/car.jpg'></img>
+            <img src='img/car.jpg'></img>
+            <img src='img/car.jpg'></img>
+            <img src='img/car.jpg'></img>
+            <img src='img/car.jpg'></img>
+        </div>
+    </body>

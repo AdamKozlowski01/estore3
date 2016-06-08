@@ -1,6 +1,4 @@
 {{extend 'layout.html'}}
-    {{block 'scrollBar.html'}}
-
 
 <h1>Thank you for your payment</h1>
 <h3>We sent you an email receipt</h3>

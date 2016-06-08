@@ -8,6 +8,14 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
 
+def textbox():
+    form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
+    if form.process().accepted:
+        #js = "jQuery('.new').slideDown('slow')"
+        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
+        pass
+    messages = db(Post).select(orderby=~Post.created_on)
+    return dict(form=form, messages=messages)
 
 def textbox():
     form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
@@ -44,9 +52,15 @@ def postRating():
     prod_id = request.vars.product
     avg = db.review.rating.avg()
     row = db(db.review.prodID == prod_id).select(avg).first()
+<<<<<<< HEAD
     product = db(db.product.id == prod_id).select().first()
     product.rating = row[avg]
     product.update_record()
+=======
+    product = db(db.product.id == prod_id)
+    product.update(rating = row[avg])
+    print row[avg]
+>>>>>>> origin/Vince
     redirect(URL('default', 'product', vars = dict(value = prod_id)))
 
 @auth.requires_login()
@@ -113,6 +127,10 @@ def product():
         oName = org[0]['h_Name']
         pPrice = prod[0]['unit_price']
         pStock = prod[0]['qty_in_stock']
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/Vince
         reviews = db(db.review.prodID == pID).select()
 
     return locals()
@@ -129,7 +147,7 @@ def orgDetails():
     return locals()
 
 def userDetails():
-    user = db(db.auth.settings.table_user == request.get_vars.value).select()
+    user = db(auth.settings.table_user.id == request.get_vars.value).select()
     if user[0] is not None:
         pFirstName = user[0]['first_name']
         pLastName = user[0]['last_name']
@@ -137,6 +155,7 @@ def userDetails():
         pOrganizationID = user[0]['Organization_id']
         org = db(db.hospitals.id == pOrganizationID).select()
         oName = org[0]['h_Name']
+        oID = org[0]['id']
     return locals()
     
 
@@ -190,7 +209,7 @@ def RegisterOrganization():
     elif formOrg.errors:
         response.flash = 'form has errors'
 
-    return dict(form = formOrg)
+    return dict(formOrg = formOrg)
 
 @auth.requires_login()
 def orgAdmin():
@@ -254,6 +273,7 @@ def uploadProduct():
     v_idneeds to the be OrdAdmin id(thing)
     '''
     form = SQLFORM(db.product)
+<<<<<<< HEAD
     if db.product.v_ID != auth.user.Organization_id:
         response.flash = 'Please enter the correct Vendor/Organization'
 #            redirect(URL('manageProducts'))
@@ -262,6 +282,9 @@ def uploadProduct():
         redirect(URL('manageProducts'))
     elif form.errors:
         response.flash = 'There are errors in the form. Please correct errors before continuing.'
+=======
+    #Needs to handle adding the product to the database
+>>>>>>> origin/Vince
     return dict(form = form);
 
 @auth.requires_membership('OrgAdmin')
@@ -273,7 +296,11 @@ def editProduct():
     record = db(db.product.id == request.get_vars.value).select()
     form = SQLFORM(db.product,record[0])
     if form.process().accepted:
+<<<<<<< HEAD
         response.flash = 'form accepted'
+=======
+        #needs to handle updating products in the db
+>>>>>>> origin/Vince
         redirect(URL('manageProducts'))
     elif form.errors:
         response.flash = 'form has errors'
