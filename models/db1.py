@@ -110,6 +110,10 @@ db.define_table(
     Field('conv','string', default=''),
     auth.signature)
 
+db.define_table(
+    'disp',
+    Field('num','integer', default=-1))
+
 #db(db.auth_user.id>1).delete()
 #db(db.product).delete()
 

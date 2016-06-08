@@ -15,8 +15,113 @@ def textbox():
         #js = "jQuery('.new').slideDown('slow')"
         #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
         pass
-    messages = db(Post).select(orderby=~Post.created_on)
-    return dict(form=form, messages=messages)
+    return dict(messages=messages, form=form)
+
+def convs():
+    me = auth.user_id
+    me = str(me)
+    tconv = []
+    conversations = db(db.conversations).select()
+    for row in conversations:
+        temp = row.text_file
+        names = temp.split()
+        for n in names:
+            if me == n:
+                tconv.append(names)
+    form=FORM(tconv)
+    return dict(tconv=tconv)
+
+@auth.requires_login()
+def findConv():
+    b=False
+    response.view = 'default/findConv.html'
+    convForm = SQLFORM.factory(Field("find_a_conversation", "string"), formstyle='bootstrap3_stacked', submit_button="Load")
+    totForm = FORM()
+    messages = ''
+    rows = db(db.current_conv.conv != None).select()
+    if convForm.process().accepted:
+        messages = parse_conv(convForm.vars.find_a_conversation)
+        b=True
+    else:
+        totForm = FORM(convForm, '', '')
+    return dict(convForm=convForm,messages=messages, b=b)
+
+def reply():
+    conversation = db(db.current_conv).select().first()
+    response.view = 'default/reply.html'
+    respForm = SQLFORM.factory(Field("response", "string"), formstyle='bootstrap3_stacked', submit_button="Send")
+    if respForm.process().accepted:
+        add_conv(respForm.vars.response)
+        b=True
+    return dict(respForm=respForm,messages=parse_conv(str(conversation.conv)))
+
+def messages():
+    b = db(db.disp).select().first()
+    btemp = b.num
+    btemp = btemp + 1
+    db(db.disp.num).update(num=btemp)
+    conversation = db(db.current_conv).select().first()
+    response.view = 'default/messages.html'
+    return dict(messages=parse_conv(str(conversation.conv)), btemp=btemp)
+
+def add_conv(s):
+    conversation = db(db.current_conv).select().first()
+    filename = get_conv(str(conversation.conv))
+    import os
+    infile = open(os.path.join(request.folder, 'private', filename), "a")
+    name = auth.user.first_name
+    infile.write(name + ': ' + s + '\n')
+    infile.close()
+    return parse_conv(str(conversation.conv))
+
+def get_conv(f):
+    conv = f
+    peeps = conv.strip().split(",")
+    me = auth.user_id
+    me = str(me)
+    peeps.append(me)
+    tconv = []
+    conversations = db(db.conversations).select()
+    for row in conversations:
+        temp = row.text_file
+        names = temp.split()
+        for n in names:
+            if me == n:
+                tconv.append(names)
+    convExi = False
+    fileName = ''
+    tempConv = list(tconv)
+    for p in peeps:
+        for tc in tconv:
+            convExi = False
+            for t in tc:
+                if t == p:
+                    convExi = True
+            if convExi == False:
+                tempConv.remove(tc)
+    tempStr = ''
+    if(len(tempConv)==1):
+        for i in tempConv[0][:-1]:
+            tempStr = tempStr + i + ' '
+        tempStr = tempStr + tempConv[0][-1]
+    rows = db(db.current_conv.conv != None).select()
+    if len(rows) == 0:
+        db.current_conv.insert(conv='')
+    else:
+        db(db.current_conv.conv).update(conv=f)
+    return tempStr
+
+def parse_conv(f):
+        if f == None:
+            conversation = db(db.current_conv).select().first()
+            f = str(conversation.conv)
+        tempStr = get_conv(f)
+        import os
+        infile = open(os.path.join(request.folder, 'private', tempStr))
+        messages = []
+        for line in infile:
+            messages.append(str(line))
+        return messages
 
 def index():
     session.products = []
