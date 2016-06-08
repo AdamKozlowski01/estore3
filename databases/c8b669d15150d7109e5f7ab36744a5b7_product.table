@@ -127,20 +127,20 @@ p34
 (dp35
 S'sortable'
 p36
-I9
+L9L
 sS'sql'
 p37
 S'CHAR(512)'
 p38
 sS'length'
 p39
-I512
+L512L
 sS'notnull'
 p40
-I00
+L0L
 sS'unique'
 p41
-I00
+L0L
 sS'type'
 p42
 S'string'
@@ -162,7 +162,7 @@ I00
 sg10
 S'datetime'
 p47
-ssS'created_by'
+ssS'unit_price'
 p48
 (dp49
 g4
@@ -170,18 +170,17 @@ I512
 sg5
 I00
 sg6
-I19
+I6
 sg7
-S'INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  '
+S'DOUBLE'
 p50
 sg9
 I00
 sg10
-S'reference auth_user'
-p51
+g33
 ssS'keywords'
-p52
-(dp53
+p51
+(dp52
 g4
 I512
 sg5
@@ -190,14 +189,14 @@ sg6
 I16
 sg7
 S'CHAR(512)'
-p54
+p53
 sg9
 I00
 sg10
 g15
 ssS'id'
-p55
-(dp56
+p54
+(dp55
 g4
 I512
 sg5
@@ -206,15 +205,15 @@ sg6
 I1
 sg7
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p57
+p56
 sg9
 I00
 sg10
 S'id'
-p58
+p57
 ssS'category'
-p59
-(dp60
+p58
+(dp59
 g4
 I512
 sg5
@@ -223,14 +222,14 @@ sg6
 I9
 sg7
 S'CHAR(512)'
-p61
+p60
 sg9
 I00
 sg10
 g15
 ssS'modified_by'
-p62
-(dp63
+p61
+(dp62
 g4
 I512
 sg5
@@ -239,11 +238,12 @@ sg6
 I21
 sg7
 S'INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  '
-p64
+p63
 sg9
 I00
 sg10
-g51
+S'reference auth_user'
+p64
 ssS'name'
 p65
 (dp66
@@ -309,7 +309,7 @@ sg9
 I00
 sg10
 g25
-ssS'unit_price'
+ssS'created_by'
 p78
 (dp79
 g4
@@ -317,14 +317,14 @@ I512
 sg5
 I00
 sg6
-I6
+I19
 sg7
-S'DOUBLE'
+S'INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  '
 p80
 sg9
 I00
 sg10
-g33
+g64
 ssS'modified_on'
 p81
 (dp82

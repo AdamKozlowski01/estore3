@@ -1,8 +1,6 @@
 {{extend 'layout.html'}}
-{{include 'scrollBar.html'}}
 
 <div id="products"></div>
-
 
 <script id="template" type="text/ractive">
 
@@ -35,9 +33,14 @@
     <form class="form-inline">
       <div class="form-group">
         <div class="input-group">
-          <div class="input-group-addon">Search</div>
+          <div class="input-group-addon">Find Me</div>
           <input type="text" class="form-control" name="keywords" style="width:300px"
                  placeholder="">
+        </div>
+        <div class="input-group">
+          <div class="input-group-addon">Max Price</div>
+          <input type="text" class="form-control" name="price" style="width:100px"
+               placeholder="400.00">
         </div>
       </div>
     <button type="submit" class="btn btn-primary" on-click="search">Search</button>
@@ -45,7 +48,7 @@
   </center>
   {% #if products.length==0 %}
   <center>
-    <img src="{{=URL('static','logo.png')}}" style="width:400px"/>
+    <img src="{{=URL('static','images/cart.png')}}" style="width:400px"/>
   </center>
   {% /if %}
   {% #if products.length>0 %}
@@ -56,7 +59,6 @@
         <th>Name</th>
         <th>In Stock</th>
         <th>Unit Price</th>
-        <th>Rating</th>
         <th></th>
       </tr>
     </thead>
@@ -65,9 +67,8 @@
       <tr class="product" data-product="{% id %}">
         <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
-        <td>{% qty_in_stock %}</td>
+        <td>${% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
-        <td>{%rating%}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
@@ -91,16 +92,13 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          
       </div>
       </div>
+      
     </div>
   </div>
   
-  
 </script>
-
-
 
 <script>
   var search_products_url = '{{=URL('search')}}';

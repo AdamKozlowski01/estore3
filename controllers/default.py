@@ -1,18 +1,10 @@
-# -*- coding: utf-8 -*-
-# this file is released under public domain and you can use without limitations
 
-#########################################################################
-## This is a sample controller
-## - index is the default action of any application
-## - user is required for authentication and authorization
-## - download is for downloading files uploaded in the db (does streaming)
-#########################################################################
+
 
 def textbox():
     form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
     if form.process().accepted:
-        #js = "jQuery('.new').slideDown('slow')"
-        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
+        
         pass
     messages = db(Post).select(orderby=~Post.created_on)
     return dict(form=form, messages=messages)
@@ -43,9 +35,9 @@ def postRating():
     prod_id = request.vars.product
     avg = db.review.rating.avg()
     row = db(db.review.prodID == prod_id).select(avg).first()
-    product = db(db.product.id == prod_id)
-    product.update(rating = row[avg])
-    print row[avg]
+    product = db(db.product.id == prod_id).select().first()
+    product.rating = row[avg]
+    product.update_record()
     redirect(URL('default', 'product', vars = dict(value = prod_id)))
 
 @auth.requires_login()
@@ -71,7 +63,7 @@ def pay():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
         redirect(URL('index'))
     from gluon.contrib.stripe import StripeForm
-    response.flash = None # never show a response.flash
+    response.flash = None
     order = db.purchase_order(request.args(0,cast=int))
     if not order or order.amount_paid:
         session.flash = 'you paid already!'
@@ -112,7 +104,6 @@ def product():
         oName = org[0]['h_Name']
         pPrice = prod[0]['unit_price']
         pStock = prod[0]['qty_in_stock']
-
         reviews = db(db.review.prodID == pID).select()
 
     return locals()
@@ -129,7 +120,7 @@ def orgDetails():
     return locals()
 
 def userDetails():
-    user = db(auth.settings.table_user.id == request.get_vars.value).select()
+    user = db(db.auth.settings.table_user == request.get_vars.value).select()
     if user[0] is not None:
         pFirstName = user[0]['first_name']
         pLastName = user[0]['last_name']
@@ -137,7 +128,6 @@ def userDetails():
         pOrganizationID = user[0]['Organization_id']
         org = db(db.hospitals.id == pOrganizationID).select()
         oName = org[0]['h_Name']
-        oID = org[0]['id']
     return locals()
     
 
@@ -191,7 +181,7 @@ def RegisterOrganization():
     elif formOrg.errors:
         response.flash = 'form has errors'
 
-    return dict(formOrg = formOrg)
+    return dict(form = formOrg)
 
 @auth.requires_login()
 def orgAdmin():
@@ -199,7 +189,7 @@ def orgAdmin():
     if the user is logged in check to see if they should be the admin
     """
     me = auth.user_id
-    orgAdminID = 3 #retrieved from auth_group
+    orgAdminID = auth.settings.table_group #retrieved from auth_group
     user = db(auth.settings.table_user.id == me).select()
     if user[0] is not None:
         org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)
@@ -240,28 +230,64 @@ def postReview():
 
 @auth.requires_membership('OrgAdmin')
 def manageProducts():
+    #shows a table of products based on the membership
     me = auth.user_id
     user = db(auth.settings.table_user.id == me).select()
     products = db(db.product.v_ID == user[0].Organization_id).select(db.product.ALL)
-
-    #products = products.as_dict()
-    return products.as_dict()
+    return dict(products=products)
 
 @auth.requires_membership('OrgAdmin')
 def uploadProduct():
+    '''
+    add new product code base skeleton
+    works, sends to new html page with forms to add new product
+    need to remove the option to manually change the v_id
+    v_idneeds to the be OrdAdmin id(thing)
+    '''
     form = SQLFORM(db.product)
-    #Needs to handle adding the product to the database
+    if db.product.v_ID != auth.user.Organization_id:
+        response.flash = 'Please enter the correct Vendor/Organization'
+
+    elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:
+
+    form.vars.v_ID = auth.user.Organization_id
+    if form.process().accepted :
+        response.flash = 'new product added'
+        redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'There are errors in the form. Please correct errors before continuing.'
     return dict(form = form);
+
+
+    return dict(form = form)
+
 
 @auth.requires_membership('OrgAdmin')
 def editProduct():
-    record = db.product(request.args(0))
-    form = SQLFORM(db.product, record)
+    '''
+    add a way to show the existing product info to the text fields
+    as of right now it reditects to tedit page which is a new form...
+    '''
+    record = db(db.product.id == request.get_vars.value).select()
+    form = SQLFORM(db.product,record[0])
     if form.process().accepted:
-        #needs to handle updating products in the db
+        response.flash = 'form accepted'
         redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'form has errors'
     return dict(form=form)
 
+@auth.requires_membership('OrgAdmin')
+def deactivateProduct():
+    '''
+    sets is_active to false, updates db
+    then redirects to manageProducts page again
+    '''
+    record = db(db.product.id == request.get_vars.value).select().first()
+    record.is_active=False
+    record.update_record()
+
+    redirect(URL('manageProducts'))
 
 @cache.action()
 def download():
