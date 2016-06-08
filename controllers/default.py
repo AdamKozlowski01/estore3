@@ -239,28 +239,57 @@ def postReview():
 
 @auth.requires_membership('OrgAdmin')
 def manageProducts():
+    #shows a table of products based on the membership
     me = auth.user_id
     user = db(auth.settings.table_user.id == me).select()
     products = db(db.product.v_ID == user[0].Organization_id).select(db.product.ALL)
-
-    #products = products.as_dict()
-    return products.as_dict()
+    return dict(products=products)
 
 @auth.requires_membership('OrgAdmin')
 def uploadProduct():
+    '''
+    add new product code base skeleton
+    works, sends to new html page with forms to add new product
+    need to remove the option to manually change the v_id
+    v_idneeds to the be OrdAdmin id(thing)
+    '''
     form = SQLFORM(db.product)
-    #Needs to handle adding the product to the database
+    if db.product.v_ID != auth.user.Organization_id:
+        response.flash = 'Please enter the correct Vendor/Organization'
+#            redirect(URL('manageProducts'))
+    elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:
+        response.flash = 'new product added'
+        redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'There are errors in the form. Please correct errors before continuing.'
     return dict(form = form);
 
 @auth.requires_membership('OrgAdmin')
 def editProduct():
-    record = db.product(request.args(0))
-    form = SQLFORM(db.product, record)
+    '''
+    add a way to show the existing product info to the text fields
+    as of right now it reditects to tedit page which is a new form...
+    '''
+    record = db(db.product.id == request.get_vars.value).select()
+    form = SQLFORM(db.product,record[0])
     if form.process().accepted:
-        #needs to handle updating products in the db
+        response.flash = 'form accepted'
         redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'form has errors'
     return dict(form=form)
 
+@auth.requires_membership('OrgAdmin')
+def deactivateProduct():
+    '''
+    sets is_active to false, updates db 
+    then redirects to manageProducts page again
+    '''
+    record = db(db.product.id == request.get_vars.value).select().first()
+    record.is_active=False
+    record.update_record()
+
+    redirect(URL('manageProducts'))
 
 @cache.action()
 def download():
