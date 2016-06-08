@@ -9,6 +9,15 @@
 #########################################################################
 
 
+def textbox():
+    form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
+    if form.process().accepted:
+        #js = "jQuery('.new').slideDown('slow')"
+        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
+        pass
+    messages = db(Post).select(orderby=~Post.created_on)
+    return dict(form=form, messages=messages)
+
 def index():
     return dict()
 
@@ -24,12 +33,21 @@ def search():
         queries.append(db.product.unit_price<=float(price))
     if not queries: query = db.product
     else: query = reduce(lambda a,b: a&b, queries)    
-    return db(query).select(limitby=(page*100,page*100+100)).as_json()
+    return db(query).select(limitby=(page*100,page*100+100), orderby=~db.product.rating).as_json()
 
 def submit_order():
     import json
     session.cart = json.loads(request.vars.cart)
     return 'ok'
+
+def postRating():
+    prod_id = request.vars.product
+    avg = db.review.rating.avg()
+    row = db(db.review.prodID == prod_id).select(avg).first()
+    product = db(db.product.id == prod_id).select().first()
+    product.rating = row[avg]
+    product.update_record()
+    redirect(URL('default', 'product', vars = dict(value = prod_id)))
 
 @auth.requires_login()
 def order_info():
@@ -82,11 +100,45 @@ def pay():
     return dict(form=form)
 
 def product():
-    print request.vars['value']
-    prod = db(db.product.id == request.get_vars.value).select()
-    print prod
-    pName = prod[0]['name']
+    pID = request.get_vars.value
+    prod = db(db.product.id == pID).select()
+    if prod[0] is not None:
+        pName = prod[0]['name']
+        pDescription = prod[0]['description']
+        pImage = prod[0]['image']
+        pAvgRating = prod[0]['rating']
+        pType = prod[0]['category']
+        pOrgID = prod[0]['v_ID']
+        org = db(db.hospitals.id == pOrgID).select()
+        oName = org[0]['h_Name']
+        pPrice = prod[0]['unit_price']
+        pStock = prod[0]['qty_in_stock']
+        reviews = db(db.review.prodID == pID).select()
+
     return locals()
+
+def orgDetails():
+    org = db(db.hospitals.id == request.get_vars.value).select()
+    if org[0] is not None:
+        oName = org[0]['h_Name']
+        oSize = org[0]['h_size']
+        oForProfit = org[0]['for_Profit']
+        oContactEmail = org[0]['contact_Email']
+        oEmployees = db(auth.settings.table_user.Organization_id == request.get_vars.value).select()
+
+    return locals()
+
+def userDetails():
+    user = db(db.auth.settings.table_user == request.get_vars.value).select()
+    if user[0] is not None:
+        pFirstName = user[0]['first_name']
+        pLastName = user[0]['last_name']
+        pPosition = user[0]['job_title']
+        pOrganizationID = user[0]['Organization_id']
+        org = db(db.hospitals.id == pOrganizationID).select()
+        oName = org[0]['h_Name']
+    return locals()
+    
 
 def thank_you():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
@@ -125,20 +177,119 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-    #formOrg = FORM('Organization Name', INPUT(_name = 'name'), 'Organization Size', INPUT(_size = 'size'), 'ESN',  INPUT(_esn = 'esn_ID', ), 'Non-Profit', \
-    #           INPUT(_forProfit = 'profit'), 'contact_Email', INPUT(_email = 'email'), INPUT(_type = 'Submit'))
-    
+    form=auth()            
+    return dict(form=form)
 
-    form=auth()
+def RegisterOrganization():
+
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:
         response.flash = 'form accepted'
-        redirect(URL('index'))
+        #check to see if this user needs to have highest privledges
+        redirect(URL('user/register'))
     elif formOrg.errors:
         response.flash = 'form has errors'
-    else:
-        response.flash = 'please fill out all user fields.'
-    return dict(form=form, formOrg = formOrg)
+
+    return dict(form = formOrg)
+
+@auth.requires_login()
+def orgAdmin():
+    """
+    if the user is logged in check to see if they should be the admin
+    """
+    me = auth.user_id
+    orgAdminID = 3 #retrieved from auth_group
+    user = db(auth.settings.table_user.id == me).select()
+    if user[0] is not None:
+        org = db(db.hospitals.id == user[0].Organization_id).select(db.hospitals.contact_Email)
+        if org[0].contact_Email is not None:
+            db.auth_membership.insert(user_id = me, group_id = orgAdminID)
+            redirect(URL('index'))
+            response.flash = "You are an OrgAdmin now, congratulations!"
+    return locals()
+
+@auth.requires_login()
+def postReview():
+
+
+    #prod_id = request.vars.product
+    #vote = db.vote(prod_id, created_by=auth.user.id)
+    #if vote:  vote.update_record(rating = request.vars.rating)
+    #else:     db.vote.insert(prodID = prod_id, rating = request.vars.rating)
+    #avg = db.vote.rating.avg()
+    #row = db(db.vote.prodID == prod_id).select(avg).first()
+    #db(db.product.id == prod_id).update(rating = row[avg])
+    me = auth.user_id
+    pID = request.get_vars.product
+    rows = db(db.product.id == pID).select()
+    product = rows[0]
+    pName = product.name
+    pRating = product.rating
+    #change to SQL form and remove prodID and UserID
+    #form = FORM('Title:', INPUT(title='title'), 'Review:', INPUT(review = 'review'), INPUT(_type='submit'))
+    form = SQLFORM(db.review, fields = ['title', 'rating','review_text'], labels = {'title': 'Title your Review',\
+     'review_text': 'Give others your thoughts'}, formstyle = 'bootstrap3_stacked')
+    form.vars.prodID = pID
+    form.vars.userID = me
+    if form.process().accepted:
+        redirect(URL('default', 'postRating', vars=dict(product=pID, rating = form.vars.rating)))
+        response.flash = "Form accepted"
+
+    return locals()
+
+@auth.requires_membership('OrgAdmin')
+def manageProducts():
+    #shows a table of products based on the membership
+    me = auth.user_id
+    user = db(auth.settings.table_user.id == me).select()
+    products = db(db.product.v_ID == user[0].Organization_id).select(db.product.ALL)
+    return dict(products=products)
+
+@auth.requires_membership('OrgAdmin')
+def uploadProduct():
+    '''
+    add new product code base skeleton
+    works, sends to new html page with forms to add new product
+    need to remove the option to manually change the v_id
+    v_idneeds to the be OrdAdmin id(thing)
+    '''
+    form = SQLFORM(db.product)
+    if db.product.v_ID != auth.user.Organization_id:
+        response.flash = 'Please enter the correct Vendor/Organization'
+#            redirect(URL('manageProducts'))
+    elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:
+        response.flash = 'new product added'
+        redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'There are errors in the form. Please correct errors before continuing.'
+    return dict(form = form);
+
+@auth.requires_membership('OrgAdmin')
+def editProduct():
+    '''
+    add a way to show the existing product info to the text fields
+    as of right now it reditects to tedit page which is a new form...
+    '''
+    record = db(db.product.id == request.get_vars.value).select()
+    form = SQLFORM(db.product,record[0])
+    if form.process().accepted:
+        response.flash = 'form accepted'
+        redirect(URL('manageProducts'))
+    elif form.errors:
+        response.flash = 'form has errors'
+    return dict(form=form)
+
+@auth.requires_membership('OrgAdmin')
+def deactivateProduct():
+    '''
+    sets is_active to false, updates db 
+    then redirects to manageProducts page again
+    '''
+    record = db(db.product.id == request.get_vars.value).select().first()
+    record.is_active=False
+    record.update_record()
+
+    redirect(URL('manageProducts'))
 
 @cache.action()
 def download():

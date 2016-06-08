@@ -27,7 +27,7 @@
     {% /if %}
   </div>
 
-  <button class="btn btn-primary pull-right" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
+  <button class="btn btn-primary" onclick="jQuery('.shopping-cart').slideToggle()">Shopping Cart, ${% total(cart) %}</button>
 
   <center style="padding:50px">
     <form class="form-inline">
@@ -59,16 +59,18 @@
         <th>Name</th>
         <th>In Stock</th>
         <th>Unit Price</th>
+        <th>Rating</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% #products: num %}
       <tr class="product" data-product="{% id %}">
-        <td><img src="http://lorempixel.com/200/{% 150+num %}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
+        <td><img src="{{=URL('default', 'download')}}/{%image%}" data-url="{{=URL('download')}}/{% image %}" class="thumbnail"/></td>
         <td><a href="{{=URL('default', 'product')}}?value={% id %}">{% name %}</a></td>
-        <td>${% qty_in_stock %}</td>
+        <td>{% qty_in_stock %}</td>
         <td>${% unit_price %}</td>
+        <td>{% rating %}</td>
         <td>
           <img on-click="buy:{% id %}" src="{{=URL('static','images/to-cart.png')}}" class="to-cart">
         </td>
@@ -94,7 +96,6 @@
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
       </div>
-      
     </div>
   </div>
   

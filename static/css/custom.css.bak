@@ -2,10 +2,12 @@
    height: 100px;
 }
 .shopping-cart {
-   display: none;   
+   display: none;
    padding: 10px;
    border-top: 5px solid #0070B2;
    border-bottom: 5px solid #0070B2;
+   position: absolute;
+   left: 0px;
 }
 .to-cart {
    width:50px;
@@ -19,10 +21,10 @@
    color: white;
 }
 .navbar-inverse .navbar-brand:hover {
-   color: red;
+   color: #FF9506;
 }
 .shopping-cart table {
-   max-width: 400px;
+   max-width: 0px;
 }
 .flip {
   display: inline-block;
@@ -37,5 +39,24 @@
   border: 0;
 }
 .btn-primary:hover {
-  background: red;
+  background: #FF9506;
+}
+.reply-area {
+    position: absolute;
+    bottom: 0px;
+}
+.reply-area textarea{
+    width: 300px;
+    height: 50px;
+    left: 0px;
+}
+.reply-area submit_button{
+    position: absolute;
+    left: 500px;
+}
+.right-sidebar .navbar-inverse{
+    bottom: 0px;
+    left: 1139px;
+    width: 300px;
+    height: 818px;
 }

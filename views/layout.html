@@ -50,6 +50,16 @@
     <!--[if lt IE 8]><p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p><![endif]-->
     <div class="flash alert alert-dismissable">{{=response.flash or ''}}</div>
     <!-- Navbar ======================================= -->
+      <div class="right-sidebar">
+      <nav class="navbar-inverse navbar-fixed-top">
+      <div class="reply-area">
+          {{=LOAD('default','textbox.load',ajax=True)}}
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          {{pass}}
+        </div>
+      </div>
+    </nav>
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
       <div class="container-fluid">
         <div class="navbar-header">
@@ -108,9 +118,6 @@
 
     {{block ads}}{{end}}
 
-<<<<<<< HEAD
-
-=======
     <!--{{block footer}} <! this is default footer ->      
     <footer class="footer">
       <div class="container-fluid">
@@ -122,7 +129,6 @@
       </div>
     </footer> -->
     {{end}}
->>>>>>> Adam
     <!-- The javascript =============================== -->
     <script src="{{=URL('static','js/bootstrap.min.js')}}"></script>
     <script src="{{=URL('static','js/ractive.min.js')}}"></script>

@@ -2,103 +2,78 @@ NE = IS_NOT_EMPTY()
 
 db.define_table(
     'customer',
-    Field('user_ID',unique = True, NE),
+    Field('user_ID',unique = True),
     Field('firstName'),
     Field('middleName',required = False),
     Field('lastName'),
     Field('profession'),
+    Field('billingAdd_ID'),
+    Field('shippingAdd_ID'),
     Field('email'),
     Field('is_Authorized','boolean'),
     Field('password'),
     Field('group_ID'),
     Field('organization_ID'),
-<<<<<<< HEAD
     Field('is_Hospital','boolean')
-=======
-    Field('is_Hospital',boolean),
-    auth.signature
->>>>>>> Adam
     )
 db.define_table(
     'address',
-    Field('organization_ID'),
+    Field('user_ID'),
     Field('typeofAddress'),
     Field('streetAddress'),
     Field('city'),
-<<<<<<< HEAD
     Field('address_state'),
     Field('zip')
-=======
-    Field('state'),
-    Field('zip'),
-    auth.signature
->>>>>>> Adam
     )
 db.define_table(
     'wishList',
     Field('user_ID'),
-    Field('product_ID'),
-    auth.signature
+    Field('product_ID')
     )
+
 db.define_table(
-<<<<<<< HEAD
-    'hospitals',
-    Field('h_ID',unique = True),
-    Field('h_Name',required = True),
-    Field('email_Format'),
-    Field('h_size'),
-    Field('esn_ID',unique = True),
-<<<<<<< HEAD
-    Field('for_Profit','boolean'),
-    Field('contact_Email')
-=======
-    Field('for_Profit',boolean),
-    Field('contact_Email'),
-    Field('billingAdd_ID'),
-    Field('shippingAdd_ID'),
-    auth.signature
->>>>>>> Adam
-    )
-db.define_table(
-=======
->>>>>>> master
     'vendors',
     Field('v_ID',unique = True,required = True),
     Field('v_Name'),
-<<<<<<< HEAD
     Field('p_Type')
     )
 db.define_table(
-=======
-    Field('contant_Email'),
-
-    auth.signature)
-db.define_Table(
->>>>>>> Adam
     'product_Type',
     Field('pType_ID'),
-    Field('v_ID'),
-    Field('category'),
-    Field('vendorID')
-    auth.signature
+    Field('category')
     )
+
 db.define_table(
     'product',
-    Field('code',requires=NE),
-    Field('name',requires=NE),
-    Field('description',requires=NE),
+    Field('code',requires=NE,widget=widget(_placeholder='Product Code', _readonly=False)),
+    Field('name',requires=NE,widget=widget(_placeholder='Product Name', _readonly=False)),
+    Field('description',requires=NE,widget=widget(_placeholder='Product Description', _readonly=False)),
     Field('qty_in_stock','integer'),
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
-    Field('tags'),
-    Field('p_Type'),
+    Field('tags',widget=widget(_placeholder='Product Tags', _readonly=False)),
+    Field('category',widget=widget(_placeholder='Product Category', _readonly=False)),
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
+    Field('v_ID', 'reference hospitals'),
     Field('tax','decimal(10,2)'),
+    Field('rating', 'float', default=3),
     Field('keywords',required=True,
-          compute=lambda r: "%(code)s %(name)s %(tags)s %(p_Type)s" % r),
+          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
+
+productTable = db['product']
+productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
+
+db.define_table(
+    'review',
+    Field('prodID', 'reference product'),
+    Field('userID', 'reference ' + auth.settings.table_user_name),
+    Field('title', length = 128),
+    Field('rating', requires=IS_IN_SET([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5])),
+    Field('review_text','text')
+    )
 
 db.define_table(
     'purchase_order',
@@ -129,6 +104,31 @@ db.define_table(
 
 #db(db.auth_user.id>1).delete()
 #db(db.product).delete()
+
+'''
+db.define_table(
+    'product',
+    Field('code',requires=NE),
+    Field('name',requires=NE),
+    Field('description',requires=NE),
+    Field('qty_in_stock','integer'),
+    Field('unit_price','decimal(10,2)'),
+    Field('image','upload'),
+    Field('tags'),
+    Field('category'),
+    Field('popularity','integer',default=0),
+    Field('featured','boolean',default=False),
+    Field('on_sale','boolean',default=False),
+    Field('v_ID', 'reference hospitals'),
+    Field('tax','decimal(10,2)'),
+    Field('keywords',required=True,
+          compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
+    auth.signature)
+'''
+
+db.product._enable_record_versioning(archive_db=db,archive_name='productArchives',current_record='current_record',is_active='is_active')
+db.customer._enable_record_versioning(archive_db=db,archive_name='customerArchives',current_record='current_record',is_active='is_active')
+
 if db(db.product).count()==0:
     import re
     import os
@@ -143,8 +143,21 @@ if db(db.product).count()==0:
             unit_price=float(l[4]),
             image=l[5],
             tags=l[6],
-            p_Type=l[7],
+            category = l[7],
             popularity=int(l[8]),
             featured=int(l[9]),
-            on_sale=int(l[9]),
+            on_sale=int(l[10]),
+            v_ID = l[11],
             tax=0.10,)
+
+response.generic_patterns = ['*'] if request.is_local else []
+from gluon.tools import Auth, prettydate
+auth = Auth(db, hmac_key = Auth.get_or_create_key())
+auth.define_tables()
+
+Post = db.define_table("post",
+                       Field("textmessage","text",requires=IS_NOT_EMPTY(),notnull=True),
+                       auth.signature
+                       )
+Post.is_active_readable = False
+Post.is_active_writable = False

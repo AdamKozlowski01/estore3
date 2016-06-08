@@ -15,19 +15,12 @@
             if not 'request_reset_password' in auth.settings.actions_disabled:
                 form.add_button(T('Lost Password'),URL(args='request_reset_password'),_class='btn btn-default')
             pass
-            if not 'register_organization' in auth.settings.actions_disabled:
-                form.add_button(('Register Orgnization'), URL(args='register_organization', vars={'_next': request.vars._next} if request.vars._next else None),_class='btn btn-default')
-            pass
         pass
         =form
         }}
         </div>
     </div>
 </div>
-
-{{if request.args(0) == 'register_organization':}}
-    {{=formOrg}}
-    {{pass}}
 
 {{block page_js}}
 <script>
