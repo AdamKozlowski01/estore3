@@ -1576,8 +1576,6 @@ success!
 success!
 success!
 success!
-timestamp: 2016-05-12T14:21:04.033781
-ALTER TABLE auth_user ADD organizationid CHAR(512);
 success!
 success!
 success!
@@ -1593,8 +1591,6 @@ success!
 success!
 success!
 success!
-timestamp: 2016-05-12T14:24:37.506243
-ALTER TABLE auth_user ADD organization_id CHAR(512);
 success!
 success!
 success!
@@ -4859,6 +4855,7 @@ success!
 success!
 success!
 success!
+
 success!
 success!
 success!

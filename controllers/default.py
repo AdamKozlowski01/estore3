@@ -1,19 +1,10 @@
-# -*- coding: utf-8 -*-
-# this file is released under public domain and you can use without limitations
 
-#########################################################################
-## This is a sample controller
-## - index is the default action of any application
-## - user is required for authentication and authorization
-## - download is for downloading files uploaded in the db (does streaming)
-#########################################################################
 
 
 def textbox():
     form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
     if form.process().accepted:
-        #js = "jQuery('.new').slideDown('slow')"
-        #comet_send('http://127.0.0.1:8888', js, 'mykey', 'mygroup')
+        
         pass
     messages = db(Post).select(orderby=~Post.created_on)
     return dict(form=form, messages=messages)
@@ -72,7 +63,7 @@ def pay():
     if not URL.verify(request, hmac_key=STRIPE_SECRET_KEY):
         redirect(URL('index'))
     from gluon.contrib.stripe import StripeForm
-    response.flash = None # never show a response.flash
+    response.flash = None
     order = db.purchase_order(request.args(0,cast=int))
     if not order or order.amount_paid:
         session.flash = 'you paid already!'
@@ -254,15 +245,22 @@ def uploadProduct():
     v_idneeds to the be OrdAdmin id(thing)
     '''
     form = SQLFORM(db.product)
+    if db.product.v_ID != auth.user.Organization_id:
+        response.flash = 'Please enter the correct Vendor/Organization'
+
+    elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:
+
     form.vars.v_ID = auth.user.Organization_id
-    #make form.vars.v_ID unchangeable
     if form.process().accepted :
         response.flash = 'new product added'
         redirect(URL('manageProducts'))
     elif form.errors:
         response.flash = 'There are errors in the form. Please correct errors before continuing.'
+    return dict(form = form);
+
 
     return dict(form = form)
+
 
 @auth.requires_membership('OrgAdmin')
 def editProduct():
