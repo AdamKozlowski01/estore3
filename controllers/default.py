@@ -1,5 +1,14 @@
 
+# -*- coding: utf-8 -*-
+# this file is released under public domain and you can use without limitations
 
+
+#########################################################################
+## This is a sample controller
+## - index is the default action of any application
+## - user is required for authentication and authorization
+## - download is for downloading files uploaded in the db (does streaming)
+#########################################################################
 
 def textbox():
     form = SQLFORM(Post, formstyle='divs',labels=None,submit_button='Send',showid=False)
@@ -249,16 +258,12 @@ def uploadProduct():
         response.flash = 'Please enter the correct Vendor/Organization'
 
     elif db.product.v_ID == auth.user.Organization_id and form.process().accepted:
-
-    form.vars.v_ID = auth.user.Organization_id
+        form.vars.v_ID = auth.user.Organization_id
     if form.process().accepted :
         response.flash = 'new product added'
         redirect(URL('manageProducts'))
     elif form.errors:
         response.flash = 'There are errors in the form. Please correct errors before continuing.'
-    return dict(form = form);
-
-
     return dict(form = form)
 
 

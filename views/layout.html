@@ -80,12 +80,6 @@
                  <a href = "{{=URL('default','RegisterOrganization')}}">Register Organization</a>
               </li>
             </ul>
-
-              <ul class = "nav navbar-nav">
-              <li class= "web2py-menu-first">
-                 <a href = "{{=URL('default','userDetails',vars=dict(value=2))}}">User Details</a>
-              </li>
-            </ul>
           </ul>
           {{if response.menu:}}
             {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
@@ -125,7 +119,6 @@
       {{pass}}
 
     </div>
-
     {{include 'scrollBar.html'}}
     {{block ads}}{{end}}
 
