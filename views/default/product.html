@@ -1,4 +1,6 @@
 {{extend 'layout.html'}}
+    {{block 'scrollBar.html'}}
+
 
 <div style="background: #f0f0f0; margin-bottom: 5px; padding: 8px;">
     <!--{{=prod}}-->
@@ -7,7 +9,7 @@
 		<div>
 			<h3>{{=pName}}</h3>
 
-			<img src="{{=URL('default', 'download', args = [pImage])}}" data-url="{{=URL('download', args = [pImage])}}" alt="" style = "width:280px;height:280px;"/>
+			<img src="images/man.jpg" alt="">
 			<p>
 				{{=pDescription}}
 			</p>
@@ -22,7 +24,7 @@
 								<ul>
 									<li>
 										<p>
-											Price: ${{=pPrice}}
+											Price: {{=pPrice}}
 										</p>
 									</li>
 									<li>
@@ -37,20 +39,12 @@
 									</li>
 									<li>
 										<p>
-											Sold By <a href="{{=(URL('default', 'orgDetails', vars = dict(value = pOrgID)))}}">{{=oName}}</a>
+											Sold By: <a href="{{=(URL('default', 'orgDetails', vars = dict(value = pOrgID)))}}">{{=oName}}</a>
 										</p>
 									</li>
 									<li>
 										<p>
-											Rating: 
-											<div>
-												{{for i in range(5):}}
-													{{if i <= (pAvgRating-1):}} <img src="{{=URL('static','images/heart.png')}}" style = "width:20px;height:20px;"/>
-													{{elif (pAvgRating-1-i) < 1.0 and (pAvgRating-1-i) > 0.0:}} <img src="{{=URL('static','images/heartHalf.png')}}" style = "width:20px;height:20px;"/>
-													{{else:}} <img src="{{=URL('static','images/heartEmpty.png')}}" style = "width:20px;height:20px;"/>
-													{{pass}}
-												{{pass}}
-											</div>
+											Rating: TO DO
 										</p>
 									</li>
 								</ul>
@@ -59,23 +53,5 @@
 					</div>
 				</div>
 			</div>
-	<a href="{{=(URL('default', 'postReview', vars = dict(product=pID)))}}">Leave a Review</a>
-	{{for review in reviews:}}
-		<div>
-			{{=review.title}}
-		</div>
-		<div>
-			{{for j in range(5):}}
-				{{if j <= (review.rating-1):}} <img src="{{=URL('static','images/heart.png')}}" style = "width:10px;height:10px;"/>
-				{{elif (review.rating-1-j) < 1.0 and (review.rating-1-j)> 0.0:}} <img src="{{=URL('static','images/heartHalf.png')}}" style = "width:10px;height:10px;"/>
-				{{else:}} <img src="{{=URL('static','images/heartEmpty.png')}}" style = "width:10px;height:10px;"/>
-				{{pass}}
-			{{pass}}
-		</div>
-		<div>
-			{{=review.review_text}}
-		</div>
-	{{pass}}
-
 </div>
 {{pass}}

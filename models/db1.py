@@ -45,14 +45,14 @@ db.define_table(
 
 db.define_table(
     'product',
-    Field('code',requires=NE,widget=widget(_placeholder='Product Code', _readonly=False)),
-    Field('name',requires=NE,widget=widget(_placeholder='Product Name', _readonly=False)),
-    Field('description',requires=NE,widget=widget(_placeholder='Product Description', _readonly=False)),
+    Field('code',requires=NE),
+    Field('name',requires=NE),
+    Field('description',requires=NE),
     Field('qty_in_stock','integer'),
     Field('unit_price','decimal(10,2)'),
     Field('image','upload'),
-    Field('tags',widget=widget(_placeholder='Product Tags', _readonly=False)),
-    Field('category',widget=widget(_placeholder='Product Category', _readonly=False)),
+    Field('tags'),
+    Field('category'),
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
@@ -63,17 +63,16 @@ db.define_table(
           compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
 
-productTable = db['product']
-productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
-
 db.define_table(
     'review',
     Field('prodID', 'reference product'),
     Field('userID', 'reference ' + auth.settings.table_user_name),
-    Field('title', length = 128),
-    Field('rating', requires=IS_IN_SET([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5])),
+    Field('rating', 'float'),
     Field('review_text','text')
     )
+
+productTable = db['product']
+productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
 
 db.define_table(
     'purchase_order',
@@ -125,10 +124,6 @@ db.define_table(
           compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
 '''
-
-db.product._enable_record_versioning(archive_db=db,archive_name='productArchives',current_record='current_record',is_active='is_active')
-db.customer._enable_record_versioning(archive_db=db,archive_name='customerArchives',current_record='current_record',is_active='is_active')
-
 if db(db.product).count()==0:
     import re
     import os
@@ -148,16 +143,4 @@ if db(db.product).count()==0:
             featured=int(l[9]),
             on_sale=int(l[10]),
             v_ID = l[11],
-            tax=0.10,)
-
-response.generic_patterns = ['*'] if request.is_local else []
-from gluon.tools import Auth, prettydate
-auth = Auth(db, hmac_key = Auth.get_or_create_key())
-auth.define_tables()
-
-Post = db.define_table("post",
-                       Field("textmessage","text",requires=IS_NOT_EMPTY(),notnull=True),
-                       auth.signature
-                       )
-Post.is_active_readable = False
-Post.is_active_writable = False
+            tax=0.10)

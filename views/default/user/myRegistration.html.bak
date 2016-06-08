@@ -1,3 +1,6 @@
 {{extend 'layout.html'}}
-<h1>This is the default/user/myRegistration.html template</h1>
+
+{{=form}}
+{{=formOrg}}
+
 {{=BEAUTIFY(response._vars)}}

@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+<h2>User Details</h2>
+<p>{{= pFirstName}} </p>
+<p>{{=pLastName}}</p>
+<p>{{=pPosition}}</p>
+<p>{{=pOrganizationID}}</p>
+<p>{{=oName}}</p>
+<p>
+ <a href="{{=(URL('default', 'orgDetails', vars = dict(value = oID)))}}">{{=oName}}</a>
+</p>
