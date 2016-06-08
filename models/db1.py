@@ -42,19 +42,6 @@ db.define_table(
     Field('pType_ID'),
     Field('category')
     )
-<<<<<<< HEAD
-
-db.define_table(
-    'product',
-    Field('code',requires=NE,widget=widget(_placeholder='Product Code', _readonly=False)),
-    Field('name',requires=NE,widget=widget(_placeholder='Product Name', _readonly=False)),
-    Field('description',requires=NE,widget=widget(_placeholder='Product Description', _readonly=False)),
-    Field('qty_in_stock','integer'),
-    Field('unit_price','decimal(10,2)'),
-    Field('image','upload'),
-    Field('tags',widget=widget(_placeholder='Product Tags', _readonly=False)),
-    Field('category',widget=widget(_placeholder='Product Category', _readonly=False)),
-=======
 db.define_table(
     'product',
     Field('code',requires=NE),
@@ -65,7 +52,6 @@ db.define_table(
     Field('image','upload'),
     Field('tags'),
     Field('category'),
->>>>>>> Andrew
     Field('popularity','integer',default=0),
     Field('featured','boolean',default=False),
     Field('on_sale','boolean',default=False),
@@ -79,7 +65,6 @@ db.define_table(
 productTable = db['product']
 productTable.v_ID.requires = IS_IN_DB(db, db.hospitals.id,'%(h_Name)s')
 
-<<<<<<< HEAD
 db.define_table(
     'review',
     Field('prodID', 'reference product'),
@@ -89,8 +74,6 @@ db.define_table(
     Field('review_text','text')
     )
 
-=======
->>>>>>> Andrew
 db.define_table(
     'purchase_order',
     Field('buyer_name'),
@@ -150,13 +133,9 @@ db.define_table(
           compute=lambda r: "%(code)s %(name)s %(tags)s" % r),
     auth.signature)
 '''
-<<<<<<< HEAD
-
 db.product._enable_record_versioning(archive_db=db,archive_name='productArchives',current_record='current_record',is_active='is_active')
 db.customer._enable_record_versioning(archive_db=db,archive_name='customerArchives',current_record='current_record',is_active='is_active')
 
-=======
->>>>>>> Andrew
 if db(db.product).count()==0:
     import re
     import os
@@ -176,11 +155,7 @@ if db(db.product).count()==0:
             featured=int(l[9]),
             on_sale=int(l[10]),
             v_ID = l[11],
-<<<<<<< HEAD
-            tax=0.10,)
-=======
             tax=0.10)
->>>>>>> Andrew
 
 response.generic_patterns = ['*'] if request.is_local else []
 from gluon.tools import Auth, prettydate
