@@ -1,6 +1,4 @@
 {{extend 'layout.html'}}
-    {{block 'scrollBar.html'}}
-
 
 <div style="background: #f0f0f0; margin-bottom: 5px; padding: 8px;">
     <!--{{=prod}}-->
@@ -63,10 +61,6 @@
 			</div>
 	<a href="{{=(URL('default', 'postReview', vars = dict(product=pID)))}}">Leave a Review</a>
 	{{for review in reviews:}}
-		{{reviewer = db(auth.settings.table_user.id == review.userID).select().first()}}
-		<div>
-			{{=reviewer.job_title}} {{=reviewer.first_name}} {{=reviewer.last_name}} said:
-		</div>
 		<div>
 			{{=review.title}}
 		</div>

@@ -71,58 +71,38 @@ sg9
 I00
 sg10
 g11
-<<<<<<< HEAD
 ssS'h_name'
 p22
 (dp23
-=======
-ssS'contact_email'
-p21
-(dp22
->>>>>>> 4b99a643d463f84aec8df441bb5369a0b5d46c34
 g4
 I512
 sg5
 I00
 sg6
-<<<<<<< HEAD
 I2
 sg7
 S'CHAR(512)'
 p24
-=======
-I7
-sg7
-S'CHAR(512)'
-p23
->>>>>>> 4b99a643d463f84aec8df441bb5369a0b5d46c34
 sg9
 I00
 sg10
 g11
-<<<<<<< HEAD
 ssS'contact_email'
 p25
 (dp26
-=======
-ssS'for_profit'
-p24
-(dp25
->>>>>>> 4b99a643d463f84aec8df441bb5369a0b5d46c34
 g4
 I512
 sg5
 I00
 sg6
-I6
+I7
 sg7
-S'CHAR(1)'
-p26
+S'CHAR(512)'
+p27
 sg9
 I00
 sg10
-S'boolean'
-p27
+g11
 ssS'h_id'
 p28
 (dp29
