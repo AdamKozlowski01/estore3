@@ -75,7 +75,17 @@
         <div class="collapse navbar-collapse navbar-ex1-collapse">
           <ul class="nav navbar-nav navbar-right">
             {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
-            
+            <ul class = "nav navbar-nav">
+              <li class= "web2py-menu-first">
+                 <a href = "{{=URL('default','RegisterOrganization')}}">Register Organization</a>
+              </li>
+            </ul>
+
+              <ul class = "nav navbar-nav">
+              <li class= "web2py-menu-first">
+                 <a href = "{{=URL('default','userDetails',vars=dict(value=2))}}">User Details</a>
+              </li>
+            </ul>
           </ul>
           {{if response.menu:}}
             {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
@@ -116,6 +126,7 @@
 
     </div>
 
+    {{include 'scrollBar.html'}}
     {{block ads}}{{end}}
 
     <!--{{block footer}} <! this is default footer ->      
