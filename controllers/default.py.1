@@ -8,8 +8,6 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
 
-<<<<<<< HEAD
-=======
 def textbox():
     #for names in db(conversations).text_file:
         #strname = names.split()
@@ -39,34 +37,28 @@ def convs():
 @auth.requires_login()
 def findConv():
     response.view = 'default/findConv.html'
-    convForm = SQLFORM.factory(Field("find_a_conversation", "string"), formstyle='bootstrap3_stacked', submit_button="Load")
+    convForm = SQLFORM.factory(Field("find_a_conversation", "string"), formstyle='bootstrap3_stacked', submit_button="Get",)
     totForm = FORM()
+    respForm = FORM()
     messages = ''
-    num = 0
-    rows = db(db.current_conv.conv != None).select()
     if convForm.process().accepted:
         messages = parse_conv(convForm.vars.find_a_conversation)
-        num = 1
+        respForm = SQLFORM.factory(Field("response", "string"), formstyle='bootstrap3_stacked', submit_button="Send")
+    elif respForm.process().accepted:
+        messages = add_conv(respForm.vars.response)
+        respForm = SQLFORM.factory(Field("response", "string"), formstyle='bootstrap3_stacked', submit_button="Send")
     else:
         totForm = FORM(convForm, '', '')
-        num = 2
-    return dict(convForm=convForm,messages=messages, num = num)
-
-def reply():
-    response.view = 'default/reply.html'
-    respForm = SQLFORM.factory(Field("response", "string"), formstyle='bootstrap3_stacked', submit_button="Send")
-    if respForm.process().accepted:
-        add_conv(respForm.vars.response)
-    return dict(respForm=respForm)
+    conversation = db(db.current_conv).select().first()
+    return dict(convForm=convForm,messages=messages,respForm=respForm, num = str(conversation.conv))
 
 def add_conv(s):
     conversation = db(db.current_conv).select().first()
     filename = get_conv(str(conversation.conv))
     import os
-    infile = open(os.path.join(request.folder, 'private', filename), "a")
+    infile = open(os.path.join(request.folder, 'private', filename))
     name = auth.user.first_name
     infile.write(name + ': ' + s + '\n')
-    infile.close()
     return parse_conv(str(conversation.conv))
 
 def get_conv(f):
@@ -107,9 +99,6 @@ def get_conv(f):
     return tempStr
 
 def parse_conv(f):
-        if f == "":
-            conversation = db(db.current_conv).select().first()
-            f = str(conversation.conv)
         tempStr = get_conv(f)
         import os
         infile = open(os.path.join(request.folder, 'private', tempStr))
@@ -125,7 +114,6 @@ def parse_conv(f):
 
 def findConvSql():
     test = []
->>>>>>> Andrew
 
 def index():
     return dict()
@@ -262,17 +250,10 @@ def user():
         @auth.requires_permission('read','table name',record_id)
     to decorate functions that need access control
     """
-<<<<<<< HEAD
-    form=auth()            
-    return dict(form=form)
-
-def registerOrg():
-=======
     form=auth()
     return dict(form=form)
 
 def RegisterOrganization():
->>>>>>> Andrew
 
     formOrg = SQLFORM(db.hospitals)
     if formOrg.process().accepted:
